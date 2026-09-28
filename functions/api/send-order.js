@@ -11,7 +11,7 @@
 // Until RESEND_API_KEY and MAIL_FROM are set, this returns 503 and the site falls
 // back to opening the customer's email app with the order filled in.
 
-const DEFAULT_TO = "uspecoline@gmail.com";
+const DEFAULT_TO = "uspecoline@gmail.com"; // override with the ORDER_TO setting
 const GST_RATE = 0.18;
 const MAX_PDF_BASE64 = 2_000_000; // ~1.5 MB PDF
 const MAX_ITEMS = 60;
@@ -41,7 +41,8 @@ export async function onRequestPost({ request, env }) {
     phone: clean(c.phone, 20), city: clean(c.city, 80), gst: clean(c.gst, 20),
     note: clean(c.note, 500), email: clean(c.email, 254),
   };
-  const ref = /^USP-\d{6}-\d{4}$/.test(d.ref || "") ? d.ref : "USP-order";
+  const ref = /^USP-\d{6}-\d{4}(\d{2})?$/.test(d.ref || "") ? d.ref : "USP-order";
+  const viaWhatsApp = d.source === "whatsapp";
   const wantCopy = !!d.copy;
   if (!cust.name || !cust.project || !cust.city || cust.phone.replace(/\D/g, "").length < 10)
     return json({ ok: false, error: "missing_fields" }, 400);
@@ -64,13 +65,14 @@ export async function onRequestPost({ request, env }) {
   const units = items.reduce((a, i) => a + i.qty, 0);
 
   const pdfB64 = String(d.pdf?.base64 || "");
-  const pdfName = /^Order-USP-\d{6}-\d{4}\.pdf$/.test(d.pdf?.name || "") ? d.pdf.name : `Order-${ref}.pdf`;
+  const pdfName = /^Order-USP-\d{6}-\d{4}(\d{2})?\.pdf$/.test(d.pdf?.name || "") ? d.pdf.name : `Order-${ref}.pdf`;
   if (!pdfB64 || pdfB64.length > MAX_PDF_BASE64 || !/^[A-Za-z0-9+/]+=*$/.test(pdfB64)) return json({ ok: false, error: "bad_pdf" }, 400);
   try { if (!atob(pdfB64.slice(0, 8)).startsWith("%PDF")) return json({ ok: false, error: "bad_pdf" }, 400); }
   catch { return json({ ok: false, error: "bad_pdf" }, 400); }
 
   // ---- compose ----
-  const subject = `${cust.name} – ${cust.project} – ${inr(total)} (incl. GST)`;
+  // Subject: order number, total, quantity, name, project
+  const subject = `Order ${ref} | ${inr(total)} | Qty ${units} | ${cust.name} | ${cust.project}`;
   const detailRows = [
     ["Order ref", ref], ["Name", cust.name], ["Business", cust.biz], ["Project", cust.project],
     ["Phone", cust.phone], ["Email", cust.email], ["Delivery city", cust.city], ["GSTIN", cust.gst],
@@ -121,8 +123,8 @@ export async function onRequestPost({ request, env }) {
   const ownerRes = await sendMail({
     from: env.MAIL_FROM, to: [ownerTo], subject,
     ...(cust.email ? { reply_to: cust.email } : {}),
-    html: html(`New order from <b>${esc(cust.name)}</b> for <b>${esc(cust.project)}</b>.`),
-    text: text(`New order from ${cust.name} for ${cust.project}.`),
+    html: html(`New order from <b>${esc(cust.name)}</b> for <b>${esc(cust.project)}</b>.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`),
+    text: text(`New order from ${cust.name} for ${cust.project}.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`),
     attachments,
   });
   if (!ownerRes.ok) return json({ ok: false, error: "send_failed" }, 502);
