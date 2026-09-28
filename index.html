@@ -74,7 +74,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .builder-stage .photo img{height:min(300px,calc(100vh - 64px - 170px))}
 .builder-stage .stage-svg{min-height:0}
 .builder-stage .stage-svg svg{max-height:min(420px,calc(100vh - 64px - 150px))}
-.stage-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.stage-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.stage-id{min-width:0}
+.stage-buy{display:flex;align-items:center;gap:12px;flex:none}
+.stage-price{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}
+.stage-price strong{font-size:22px;font-weight:600;white-space:nowrap}
+.stage-price small{font-size:12px;color:var(--muted)}
+.stage-add{height:42px;padding:0 16px;font-size:15px}
 .stage-code{font-size:28px;font-weight:600;letter-spacing:.01em}
 .stage-name{color:var(--muted);font-size:15px}
 .stage-body{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center;margin-top:14px}
@@ -128,8 +134,17 @@ legend{font-size:15px;color:var(--muted);margin-bottom:8px;padding:0}
   /* Phone/tablet: a compact preview bar pinned under the header while the options scroll */
   .builder-stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);z-index:5;padding:10px 14px 12px;border-bottom:1px solid var(--rule);box-shadow:0 6px 12px -8px rgba(0,0,0,.25)}
   .stage-pin{position:static}
-  .stage-code{font-size:20px}
-  .stage-name{font-size:13px}
+  .stage-code{font-size:18px}
+  .stage-name{font-size:12px}
+  .stage-head{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:2px;align-items:center}
+  .stage-id{display:contents}
+  .stage-code{grid-column:1;grid-row:1}
+  .stage-buy{grid-column:2;grid-row:1}
+  .stage-name{grid-column:1 / -1;grid-row:2}
+  .stage-buy{gap:8px}
+  .stage-price strong{font-size:17px}
+  .stage-price small{font-size:11px}
+  .stage-add{height:36px;padding:0 12px;font-size:14px}
   .stage-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:8px}
   .builder-stage .photo img{height:clamp(120px,22vh,180px);padding:6px}
   .builder-stage .stage-svg svg{max-height:clamp(120px,22vh,180px)}
@@ -317,8 +332,11 @@ body.has-cart{padding-bottom:84px}
         <div class="builder-stage">
           <div class="stage-pin">
           <div class="stage-head">
-            <div class="stage-code" id="stCode">4WTU1</div>
-            <div class="stage-name" id="stSize">1150 × 600 × 850 mm</div>
+            <div class="stage-id">
+              <div class="stage-code" id="stCode">4WTU1</div>
+              <div class="stage-name" id="stSize">1150 × 600 × 850 mm</div>
+            </div>
+            <div class="stage-buy"><div class="stage-price"><strong id="stPrice"></strong><small>excl. GST</small></div><button type="button" class="btn btn-gold stage-add" id="stAdd">Add to cart</button></div>
           </div>
           <div class="stage-body">
             <figure class="photo"><img id="stPhoto" src="img/wt-u1.jpg" alt="3D view of the work table with 1 under shelf"></figure>
@@ -384,8 +402,11 @@ body.has-cart{padding-bottom:84px}
           <div class="builder-stage">
             <div class="stage-pin">
               <div class="stage-head">
-                <div class="stage-code" data-code></div>
-                <div class="stage-name" data-size></div>
+                <div class="stage-id">
+                  <div class="stage-code" data-code></div>
+                  <div class="stage-name" data-size></div>
+                </div>
+                <div class="stage-buy"><div class="stage-price"><strong data-sprice></strong><small>excl. GST</small></div><button type="button" class="btn btn-gold stage-add" data-sadd>Add to cart</button></div>
               </div>
               <div class="stage-body">
                 <figure class="photo"><img data-photo alt="" decoding="async"></figure>
@@ -425,8 +446,11 @@ body.has-cart{padding-bottom:84px}
           <div class="builder-stage">
             <div class="stage-pin">
               <div class="stage-head">
-                <div class="stage-code" data-code></div>
-                <div class="stage-name" data-size></div>
+                <div class="stage-id">
+                  <div class="stage-code" data-code></div>
+                  <div class="stage-name" data-size></div>
+                </div>
+                <div class="stage-buy"><div class="stage-price"><strong data-sprice></strong><small>excl. GST</small></div><button type="button" class="btn btn-gold stage-add" data-sadd>Add to cart</button></div>
               </div>
               <div class="stage-body">
                 <figure class="photo"><img data-photo alt="" decoding="async"></figure>
@@ -479,8 +503,11 @@ body.has-cart{padding-bottom:84px}
           <div class="builder-stage">
             <div class="stage-pin">
               <div class="stage-head">
-                <div class="stage-code" data-code></div>
-                <div class="stage-name" data-size></div>
+                <div class="stage-id">
+                  <div class="stage-code" data-code></div>
+                  <div class="stage-name" data-size></div>
+                </div>
+                <div class="stage-buy"><div class="stage-price"><strong data-sprice></strong><small>excl. GST</small></div><button type="button" class="btn btn-gold stage-add" data-sadd>Add to cart</button></div>
               </div>
               <div class="stage-body">
                 <figure class="photo"><img data-photo alt="" decoding="async"></figure>
@@ -521,8 +548,11 @@ body.has-cart{padding-bottom:84px}
           <div class="builder-stage">
             <div class="stage-pin">
               <div class="stage-head">
-                <div class="stage-code" data-code></div>
-                <div class="stage-name" data-size></div>
+                <div class="stage-id">
+                  <div class="stage-code" data-code></div>
+                  <div class="stage-name" data-size></div>
+                </div>
+                <div class="stage-buy"><div class="stage-price"><strong data-sprice></strong><small>excl. GST</small></div><button type="button" class="btn btn-gold stage-add" data-sadd>Add to cart</button></div>
               </div>
               <div class="stage-body">
                 <figure class="photo"><img data-photo alt="" decoding="async"></figure>
@@ -851,6 +881,8 @@ body.has-cart{padding-bottom:84px}
     $("stPhoto").alt = `3D view of the ${tableName(b,B,O).toLowerCase()}`;
     lastDrawn = {B,O};
     $("pExcl").textContent = fmt(price);
+    $("stPrice").textContent = fmt(price);
+    $("stAdd").setAttribute("aria-label", `Add ${code} to cart`);
     $("pIncl").textContent = `excl. GST, ${fmt(price*(1+GST))} with 18% GST`;
     const dB = tablePrice(b,n,true,O) - tablePrice(b,n,false,O);
     const dO = tablePrice(b,n,B,true) - tablePrice(b,n,B,false);
@@ -869,7 +901,9 @@ body.has-cart{padding-bottom:84px}
   $("optO").addEventListener("change",e=>{cfg.O=e.target.checked;renderConfig();});
   $("qMinus").addEventListener("click",()=>{ $("qty").value = Math.max(1,(parseInt($("qty").value,10)||1)-1); });
   $("qPlus").addEventListener("click",()=>{ $("qty").value = Math.min(999,(parseInt($("qty").value,10)||1)+1); });
-  $("addCfg").addEventListener("click",()=>{ addToCart(tableCode(cfg.b,cfg.n,cfg.B,cfg.O), $("qty").value); $("qty").value=1; });
+  const addTable = ()=>{ addToCart(tableCode(cfg.b,cfg.n,cfg.B,cfg.O), $("qty").value); $("qty").value=1; };
+  $("addCfg").addEventListener("click",addTable);
+  $("stAdd").addEventListener("click",addTable);
 
   // Product blocks (same layout as the work table builder)
   function setupCard(rootId, lengths, codeFor, draw, labelFor, extraFor, defIdx, photoFor){
@@ -887,6 +921,8 @@ body.has-cart{padding-bottom:84px}
       const img = q("[data-photo]"); img.src = `img/${ph[0]}.jpg`; img.alt = ph[1];
       q("[data-draw]").innerHTML = draw(n);
       q("[data-price]").textContent = fmt(item.price);
+      q("[data-sprice]").textContent = fmt(item.price);
+      q("[data-sadd]").setAttribute("aria-label", `Add ${code} to cart`);
       q("[data-incl]").textContent = `excl. GST, ${fmt(item.price*(1+GST))} with 18% GST`;
       q("[data-add]").textContent = `Add ${code} to cart`;
       const ex = q("[data-extra]"); if(ex && extraFor) ex.textContent = extraFor(n);
@@ -894,7 +930,9 @@ body.has-cart{padding-bottom:84px}
     segEl.addEventListener("change",e=>{ n = +e.target.value; render(); });
     q("[data-qminus]").addEventListener("click",()=>{ qty.value = Math.max(1, qv()-1); });
     q("[data-qplus]").addEventListener("click",()=>{ qty.value = Math.min(999, qv()+1); });
-    q("[data-add]").addEventListener("click",()=>{ addToCart(codeFor(n), qv()); qty.value = 1; });
+    const add = ()=>{ addToCart(codeFor(n), qv()); qty.value = 1; };
+    q("[data-add]").addEventListener("click",add);
+    q("[data-sadd]").addEventListener("click",add);
     render();
   }
   setupCard("pRack",[900,1150],L=>RACKS[LEN2N[L]].code,L=>rackSVG(LEN2N[L]),null,null,null,()=>["rack-ss","3D view of the 5-tier stainless steel storage rack"]);
