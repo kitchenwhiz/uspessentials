@@ -139,6 +139,9 @@ section.block{padding:72px 0}
 
 
 /* Price list */
+.pl-toggle svg{transition:transform .2s}
+.pl-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
+#plPanel{margin-top:20px}
 .pl-tools{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:14px}
@@ -456,6 +459,8 @@ td.code{font-weight:600;white-space:nowrap}
           <p>Every standard item with its EQ code. Prices are in rupees and exclude GST and shipping.</p>
         </div>
       </div>
+      <button type="button" class="btn btn-line pl-toggle" id="plToggle" aria-expanded="false" aria-controls="plPanel"><span id="plToggleText">Show full price list</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div id="plPanel" hidden>
       <div class="pl-tools">
         <div class="chips" role="group" aria-label="Filter by category">
           <button class="chip" data-f="all" aria-pressed="true">All</button>
@@ -478,6 +483,7 @@ td.code{font-weight:600;white-space:nowrap}
         </table>
       </div>
       <p class="code-key">Reading the codes: the first digit is the length (3 = 900, 4 = 1150, 5 = 1500 mm). WT work table, C cross support, U1/U2 under shelves, O2 two overhead shelves, B back splash, OHS overhead shelf, TR tier rack, MSR MS storage rack, GT grease trap, DG drain grating.</p>
+      </div>
     </div>
   </section>
 
@@ -800,6 +806,13 @@ td.code{font-weight:600;white-space:nowrap}
     renderPriceList();
   }));
   $("plSearch").addEventListener("input",renderPriceList);
+  $("plToggle").addEventListener("click",()=>{
+    const open = $("plToggle").getAttribute("aria-expanded")!=="true";
+    $("plToggle").setAttribute("aria-expanded", String(open));
+    $("plPanel").hidden = !open;
+    $("plToggleText").textContent = open ? "Hide full price list" : `Show full price list (${ORDER.length} items)`;
+  });
+  $("plToggleText").textContent = `Show full price list (${ORDER.length} items)`;
   $("plBody").addEventListener("click",e=>{ const b=e.target.closest("[data-add]"); if(b) addToCart(b.dataset.add,1); });
 
   // Cart drawer
