@@ -33,7 +33,7 @@
   --danger:#F97066; color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 76px);scroll-behavior:smooth}
+html{--head-h:64px;scroll-padding-top:calc(env(safe-area-inset-top,0px) + var(--head-h) + 12px);scroll-behavior:smooth}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.55;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 img,svg{max-width:100%}
@@ -44,16 +44,38 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Header */
 .site-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--black);color:#fff}
-.site-head .wrap{display:flex;align-items:center;gap:24px;height:64px}
+.site-head .wrap{display:flex;align-items:center;gap:24px;min-height:64px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
 .brand svg{height:34px;width:auto;display:block}
-.nav{display:flex;gap:22px;margin-left:auto}
-.nav a{text-decoration:none;color:#D9DDE0;font-size:15px}
+.nav{display:flex;gap:22px;margin-left:auto;align-items:flex-end}
+.nav a{text-decoration:none;color:#D9DDE0;font-size:15px;display:flex;flex-direction:column;align-items:center;padding:10px 0}
 .nav a:hover{color:var(--gold-2)}
+.nav a:hover .nav-pic{border-color:var(--gold-1)}
+/* Menu pictures: shown at the top of the page, folded into names once you scroll */
+.nav-pic{display:grid;place-items:center;width:84px;height:58px;margin-bottom:6px;background:#fff;border:1px solid #2a2a2a;border-radius:6px;overflow:hidden;transition:height .25s ease,width .25s ease,margin .25s ease,opacity .2s ease,border-color .15s}
+.nav-pic img{width:100%;height:100%;object-fit:contain;padding:4px;display:block}
+.nav-ico{background:#151515;border-color:#333;color:var(--gold-2)}
+.nav-ico svg{width:28px;height:28px}
+.site-head.folded .nav-pic{height:0;width:0;margin-bottom:0;opacity:0;border-width:0}
+.nav-txt{white-space:nowrap}
+.nav-pics-btn{display:grid;place-items:center;width:36px;height:36px;background:none;border:1px solid #3A3A3A;color:#D9DDE0;border-radius:999px;cursor:pointer;flex:none}
+.nav-pics-btn[hidden]{display:none}
+.nav-pics-btn:hover{border-color:var(--gold-1);color:var(--gold-2)}
 .cart-btn{display:flex;align-items:center;gap:8px;background:none;border:1px solid #3A3A3A;color:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;font-size:15px}
 .cart-btn:hover{border-color:var(--gold-1)}
 .cart-count{background:linear-gradient(135deg,var(--gold-1),var(--gold-2));color:#000;border-radius:999px;min-width:22px;height:22px;display:inline-grid;place-items:center;font-size:13px;font-weight:600;padding:0 6px}
-@media (max-width:760px){.nav{display:none}.cart-btn{margin-left:auto}}
+@media (max-width:760px){
+  .site-head .wrap{flex-wrap:wrap;column-gap:10px;row-gap:0;padding-top:8px}
+  .brand{order:1}
+  .nav-pics-btn{order:2;margin-left:auto}
+  .cart-btn{order:3;margin-left:auto}
+  .nav-pics-btn:not([hidden]) + .cart-btn{margin-left:0}
+  .nav{order:4;width:calc(100% + 40px);margin:0 -20px;padding:0 20px;gap:14px;overflow-x:auto;scrollbar-width:none;align-items:flex-end}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex:none;font-size:13px;padding:8px 0 10px}
+  .nav-pic{width:64px;height:44px;margin-bottom:5px}
+  .nav-ico svg{width:22px;height:22px}
+}
 
 /* Hero + builder */
 .hero{background:var(--black);color:#fff;padding:48px 0 0}
@@ -70,7 +92,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   repeating-linear-gradient(0deg,transparent 0 23px,color-mix(in srgb,var(--line) 12%,transparent) 23px 24px),
   var(--steel-hi);padding:24px;display:flex;flex-direction:column}
 /* Keep the photo and drawing in view while choosing options */
-.stage-pin{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px + 16px)}
+.stage-pin{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--head-h) + 16px)}
 .builder-stage .photo img{height:min(300px,calc(100vh - 64px - 170px))}
 .builder-stage .stage-svg{min-height:0}
 .builder-stage .stage-svg svg{max-height:min(420px,calc(100vh - 64px - 150px))}
@@ -132,7 +154,7 @@ legend{font-size:15px;color:var(--muted);margin-bottom:8px;padding:0}
   .builder-panel{padding:22px 20px 26px}
   .photo img{height:260px}
   /* Phone/tablet: a compact preview bar pinned under the header while the options scroll */
-  .builder-stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);z-index:5;padding:10px 14px 12px;border-bottom:1px solid var(--rule);box-shadow:0 6px 12px -8px rgba(0,0,0,.25)}
+  .builder-stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--head-h));z-index:5;padding:10px 14px 12px;border-bottom:1px solid var(--rule);box-shadow:0 6px 12px -8px rgba(0,0,0,.25)}
   .stage-pin{position:static}
   .stage-code{font-size:18px}
   .stage-name{font-size:12px}
@@ -302,12 +324,13 @@ body.has-cart{padding-bottom:84px}
       </svg>
     </a>
     <nav class="nav" aria-label="Main">
-      <a href="#build">Work tables</a>
-      <a href="#shelving">Shelves &amp; racks</a>
-      <a href="#drainage">Drainage</a>
-      <a href="#prices">Price list</a>
-      <a href="#ordering">How ordering works</a>
+      <a href="#build"><span class="nav-pic"><img src="img/wt-u1.jpg" alt=""></span><span class="nav-txt">Work tables</span></a>
+      <a href="#shelving"><span class="nav-pic"><img src="img/rack-ss.jpg" alt=""></span><span class="nav-txt">Shelves &amp; racks</span></a>
+      <a href="#drainage"><span class="nav-pic"><img src="img/gtrap.jpg" alt=""></span><span class="nav-txt">Drainage</span></a>
+      <a href="#prices"><span class="nav-pic nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span class="nav-txt">Price list</span></a>
+      <a href="#ordering"><span class="nav-pic nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v10H2zM13 9h4l4 4v3h-8z"/><circle cx="6" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg></span><span class="nav-txt">How ordering works</span></a>
     </nav>
+    <button type="button" class="nav-pics-btn" id="navPics" aria-label="Show menu pictures" aria-expanded="false" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/></svg></button>
     <button class="cart-btn" id="openCart" aria-haspopup="dialog">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
       Cart <span class="cart-count" id="cartCount">0</span>
@@ -1083,6 +1106,28 @@ body.has-cart{padding-bottom:84px}
     clearTimeout(addedTimer);
     addedTimer = setTimeout(()=>{ addedTimer=null; $("cbSub").textContent = cbDefault; $("cbSub").classList.remove("added"); }, 2500);
   }
+
+  // Header: menu pictures fold into names on scroll; the picture button brings them back
+  const head = document.querySelector(".site-head"), navPics = $("navPics");
+  let picsOpenedAt = null;
+  function setFolded(f){
+    head.classList.toggle("folded", f);
+    navPics.hidden = !f;
+    navPics.setAttribute("aria-expanded", String(!f));
+  }
+  function onScroll(){
+    const y = window.scrollY;
+    // unfold only right at the top, fold once properly scrolled (avoids flicker)
+    if (y <= 4) { picsOpenedAt = null; setFolded(false); return; }
+    if (picsOpenedAt !== null) { if (Math.abs(y - picsOpenedAt) < 120) return; picsOpenedAt = null; }
+    if (y > 60) setFolded(true);
+  }
+  window.addEventListener("scroll", onScroll, {passive:true});
+  navPics.addEventListener("click", ()=>{ picsOpenedAt = window.scrollY; setFolded(false); });
+  document.querySelectorAll(".nav a").forEach(a=>a.addEventListener("click", ()=>{ picsOpenedAt = null; }));
+  const setHeadH = ()=> document.documentElement.style.setProperty("--head-h", head.offsetHeight + "px");
+  if (window.ResizeObserver) new ResizeObserver(setHeadH).observe(head);
+  setHeadH(); onScroll();
 
   renderConfig(); renderPriceList(); renderCart();
 })();
