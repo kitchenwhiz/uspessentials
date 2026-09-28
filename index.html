@@ -1117,15 +1117,25 @@ body.has-cart{padding-bottom:84px}
   // ---- Order PDF (phones: saved to the phone, then attached in WhatsApp) ----
   const JSPDF_SRC = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
   let jsPdfLoading = null, lastPdf = null;
+  let pdfLogos = null, logosLoading = null;
+  function loadLogos(){
+    if (pdfLogos) return Promise.resolve(pdfLogos);
+    if (!logosLoading) logosLoading = Promise.all(["img/logo-kitchenwhiz.jpg","img/logo-barwhiz.jpg"].map(src=>
+      fetch(src).then(r=>{ if(!r.ok) throw new Error(src); return r.blob(); }).then(b=>new Promise((ok,fail)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=fail; fr.readAsDataURL(b); }))
+    )).then(([kw, bw])=>{ pdfLogos = {kw, bw}; return pdfLogos; }).catch(e=>{ logosLoading = null; throw e; });
+    return logosLoading;
+  }
   function loadJsPdf(){
-    if (window.jspdf) return Promise.resolve(window.jspdf.jsPDF);
+    // the letterhead logos are fetched alongside jsPDF; the PDF is still made if they fail
+    const logos = loadLogos().catch(()=>null);
+    if (window.jspdf) return logos.then(()=>window.jspdf.jsPDF);
     if (!jsPdfLoading) jsPdfLoading = new Promise((ok, fail)=>{
       const s = document.createElement("script"); s.src = JSPDF_SRC; s.async = true;
       s.onload = ()=> window.jspdf ? ok(window.jspdf.jsPDF) : fail(new Error("jsPDF missing"));
       s.onerror = ()=>{ jsPdfLoading = null; fail(new Error("jsPDF failed to load")); };
       document.head.appendChild(s);
     });
-    return jsPdfLoading;
+    return Promise.all([jsPdfLoading, logos]).then(([J])=>J);
   }
   const isPhone = () => !window.matchMedia("(hover:hover) and (pointer:fine)").matches;
   function orderRef(){
@@ -1137,19 +1147,58 @@ body.has-cart{padding-bottom:84px}
   function buildPdf(JsPDF, c, ref){
     const doc = new JsPDF({unit:"mm", format:"a4"});
     const L = 15, R = 195, W = R - L; let y = 18;
-    doc.setFillColor(0,0,0); doc.rect(0,0,210,30,"F");
-    doc.setTextColor(242,192,99); doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.text("USP Essentials", L, 15);
-    doc.setTextColor(255,255,255); doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text("Stainless steel kitchen equipment, Bengaluru", L, 22);
-    doc.setFontSize(10); doc.text("ORDER REQUEST", R, 13, {align:"right"});
-    doc.text("Ref: " + ref, R, 19, {align:"right"});
-    doc.text("Date: " + new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}), R, 25, {align:"right"});
-    doc.setTextColor(20,23,26); y = 40;
-    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Customer", L, y); y += 6;
-    doc.setFont("helvetica","normal"); doc.setFontSize(10);
-    [["Phone", c.phone || "Sent via WhatsApp"]].forEach(([k,v])=>{
-      if(!v) return; doc.setTextColor(88,98,106); doc.text(k, L, y); doc.setTextColor(20,23,26); doc.text(ascii(v), L+32, y); y += 5.5;
-    });
-    y += 4;
+    // ---- Letterhead, as in rows 1–18 of the USP quote template ----
+    doc.setTextColor(160,96,96); doc.setFont("helvetica","normal"); doc.setFontSize(22);
+    doc.text("UNIQUE STEEL PRODUCTS PVT LTD", 105, 18, {align:"center"});
+    const top = 26, rowH = 4.6;
+    // A bordered block; a row with a null label is drawn as a grey heading bar
+    const box = (x, w, rows, labelW) => {
+      doc.setDrawColor(160,160,160); doc.setLineWidth(0.2); doc.setTextColor(20,23,26);
+      let ry = top;
+      rows.forEach(([k, v, strong])=>{
+        if (k === null) {
+          doc.setFillColor(217,217,217); doc.rect(x, ry, w, 5.5, "FD");
+          doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.text(v, x + w/2, ry + 3.8, {align:"center"});
+          ry += 5.5; return;
+        }
+        doc.rect(x, ry, labelW, rowH); doc.rect(x + labelW, ry, w - labelW, rowH);
+        doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.text(k, x + labelW - 1.2, ry + 3.2, {align:"right"});
+        // shrink long values to fit the cell
+        const txt = ascii(v), avail = w - labelW - 2.4; let fs = 7;
+        doc.setFont("helvetica", strong ? "bold" : "normal"); doc.setFontSize(fs);
+        while (txt && doc.getTextWidth(txt) > avail && fs > 5) { fs -= 0.25; doc.setFontSize(fs); }
+        doc.text(txt, x + labelW + 1.2, ry + 3.2);
+        ry += rowH;
+      });
+    };
+    box(L, 76, [
+      [null, "SERVICE PROVIDER"],
+      ["Company Name:", "UNIQUE STEEL PRODUCTS PRIVATE LIMITED"],
+      ["Address:", "235/E Bommasandra Industrial Area"],
+      ["", "Bangalore, Karnataka 560099"],
+      ["Website:", "www.kitchenwhiz.in"],
+      ["Phone:", "9902014700"],
+      ["Email:", "info@kitchenwhiz.in"],
+      ["", "GSTIN: 29AAECU1402F1ZO"],
+    ], 22);
+    if (pdfLogos) {
+      try { doc.addImage(pdfLogos.kw, "JPEG", 95, top + 4, 24.4 * 0.9, 30 * 0.9); } catch(e) {}
+      try { doc.addImage(pdfLogos.bw, "JPEG", 121, top + 4, 26.1 * 0.9, 30 * 0.9); } catch(e) {}
+    }
+    const now = new Date(), MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dateStr = `${String(now.getDate()).padStart(2,"0")}-${MON[now.getMonth()]}-${String(now.getFullYear()).slice(2)}`;   // e.g. 18-Sep-26
+    box(147, R - 147, [
+      ["DATE:", dateStr, true],
+      ["ESTIMATE NO:", ref, true],
+      [null, "CONSIGNEE"],
+      ["Name:", c.name || ""],
+      ["Billing Address:", c.city || ""],
+      ["Email:", c.email || ""],
+      ["Phone Number:", c.phone || "Sent via WhatsApp", true],
+      ["GST #", c.gst || ""],
+    ], 20);
+    doc.setTextColor(20,23,26); doc.setLineWidth(0.2);
+    y = top + 5.5 + 7*rowH + 10;
     const cols = [{h:"#",x:L,w:8},{h:"Code",x:L+8,w:26},{h:"Item",x:L+34,w:78},{h:"Qty",x:L+112,w:14,a:"right"},{h:"Rate",x:L+126,w:27,a:"right"},{h:"Amount",x:L+153,w:27,a:"right"}];
     const head = ()=>{ doc.setFillColor(238,241,243); doc.rect(L, y-5, W, 8, "F"); doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
       cols.forEach(cl=> doc.text(cl.h, cl.a==="right" ? cl.x+cl.w-1 : cl.x+1, y, cl.a==="right"?{align:"right"}:undefined)); y += 7; doc.setFont("helvetica","normal"); };
@@ -1179,7 +1228,7 @@ body.has-cart{padding-bottom:84px}
     notes.forEach(n=>{ const ls = doc.splitTextToSize(n, W); if (y + ls.length*4.5 > 280){ doc.addPage(); y = 20; } doc.text(ls, L, y); y += ls.length*4.5 + 1.5; });
     const pages = doc.getNumberOfPages();
     for (let pg=1; pg<=pages; pg++){ doc.setPage(pg); doc.setFontSize(8.5); doc.setTextColor(120,128,134);
-      doc.text("USP Essentials, 235/E Bommasandra Industrial Area, Phase 3, Bengaluru 560099  |  +91 99020 14700  |  uspecoline@gmail.com", 105, 290, {align:"center"}); }
+      doc.text(`Unique Steel Products Pvt Ltd  |  ${ref}  |  Page ${pg} of ${pages}`, 105, 290, {align:"center"}); }
     return doc.output("blob");
   }
   function downloadBlob(blob, name){
