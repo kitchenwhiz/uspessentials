@@ -78,7 +78,7 @@ export async function onRequestPost({ request, env }) {
   catch { return json({ ok: false, error: "bad_pdf" }, 400); }
 
   // ---- 1. save the PDF to Google Drive ----
-  let driveUrl = "";
+  let driveUrl = "", driveError = "";
   if (driveOn) {
     const safe = (s) => s.replace(/[\\/:*?"<>|#%]+/g, " ").replace(/\s{2,}/g, " ").trim().slice(0, 60);
     const driveName = `${ref} - ${safe(cust.name)} - ${safe(cust.project)}.pdf`;
@@ -90,9 +90,11 @@ export async function onRequestPost({ request, env }) {
           description: `Order ${ref} | ${inr(total)} | Qty ${units} | ${cust.name} | ${cust.project} | ${cust.phone}`,
         }),
       });
-      const j = await r.json();
+      const raw = await r.text();
+      let j = null; try { j = JSON.parse(raw); } catch { driveError = `not_json_${r.status}`; }
       if (j && j.ok && /^https:\/\/(drive|docs)\.google\.com\//.test(j.url || "")) driveUrl = j.url;
-    } catch { /* Drive unavailable: carry on with email */ }
+      else if (j) driveError = String(j.error || "unknown").slice(0, 40);
+    } catch (e) { driveError = "unreachable"; }
   }
 
   // ---- compose ----
@@ -158,7 +160,7 @@ export async function onRequestPost({ request, env }) {
     });
     emailed = ownerRes.ok;
   }
-  if (!emailed && !driveUrl) return json({ ok: false, error: "send_failed" }, 502);
+  if (!emailed && !driveUrl) return json({ ok: false, error: "send_failed", drive: driveOn ? (driveError || "no_link") : "off", email: emailOn ? "failed" : "off" }, 502);
 
   // ---- 3. optional copy to the customer (reply goes to USP Essentials) ----
   let copied = false;
@@ -172,5 +174,5 @@ export async function onRequestPost({ request, env }) {
     copied = copyRes.ok;
   }
 
-  return json({ ok: true, ref, total, emailed, driveUrl, copied });
+  return json({ ok: true, ref, total, emailed, driveUrl, copied, ...(driveError ? { driveError } : {}) });
 }
