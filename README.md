@@ -38,12 +38,13 @@ customer's email app with the order filled in.
 
 ## Order PDFs in Google Drive
 
-Every order (WhatsApp or email) saves its PDF to a Google Drive folder, in monthly
-sub-folders, named like `USP-260928-155105 - Name - Project.pdf`. The Drive link goes
+Every order (WhatsApp or email) saves its PDF to the **uspecoline orders** folder in the
+Google Drive of tradelinkscorporation@gmail.com, in monthly sub-folders, named like `USP-260928-155105 - Name - Project.pdf`. The Drive link goes
 in the WhatsApp summary and in the order email to USP Essentials (not in the customer's copy).
 
-1. Follow the steps at the top of `drive/save-order-pdf.gs` (create the folder, paste the
-   script at script.google.com, deploy as a Web app: Execute as *Me*, access *Anyone*).
+1. Signed in as tradelinkscorporation@gmail.com, follow the steps at the top of
+   `drive/save-order-pdf.gs` (paste the script at script.google.com, set TOKEN, run
+   `setupCheck` once, deploy as a Web app: Execute as *Me*, access *Anyone*).
 2. In Cloudflare → Pages project → Settings → Variables and secrets add
    `DRIVE_SCRIPT_URL` (the Web app URL) and `DRIVE_TOKEN` (the script's TOKEN, as a secret).
 
