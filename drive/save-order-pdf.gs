@@ -24,8 +24,8 @@
  *       DRIVE_TOKEN      = the same TOKEN (as a secret)
  *     for Production and Preview, then redeploy.
  *
- * The PDFs stay private to your Google account: the link opens for you (and anyone
- * you share the folder with), not for the public. Requests without the TOKEN are refused.
+ * Each quote PDF is set to "Anyone with the link can view" so customers can open it;
+ * the folder itself stays private. Requests without the TOKEN are refused.
  */
 
 const ROOT_FOLDER_NAME = 'UPS_ecoline_orders';
@@ -68,8 +68,11 @@ function doPost(e) {
     const folder = childFolder_(rootFolder_(), month);
     const file = folder.createFile(Utilities.newBlob(bytes, 'application/pdf', name));
     if (d.description) file.setDescription(String(d.description).slice(0, 500));
+    // Quotes are shared with customers: anyone with the link can view this file (the folder stays private)
+    let shared = true;
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { shared = false; }
 
-    return reply_({ ok: true, id: file.getId(), url: file.getUrl() });
+    return reply_({ ok: true, id: file.getId(), url: file.getUrl(), shared: shared });
   } catch (err) {
     return reply_({ ok: false, error: 'server_error', detail: String((err && err.message) || err).slice(0, 150) });
   }
