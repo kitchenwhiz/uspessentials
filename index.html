@@ -64,11 +64,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 .facts li{display:flex;align-items:center;gap:8px}
 .facts li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold-1)}
 
-.builder{margin-top:40px;background:var(--surface);color:var(--text);border-radius:6px 6px 0 0;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);overflow:hidden}
+.builder{margin-top:40px;background:var(--surface);color:var(--text);border-radius:6px 6px 0 0;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);overflow:clip}
 .builder-stage{background:
   repeating-linear-gradient(90deg,transparent 0 23px,color-mix(in srgb,var(--line) 12%,transparent) 23px 24px),
   repeating-linear-gradient(0deg,transparent 0 23px,color-mix(in srgb,var(--line) 12%,transparent) 23px 24px),
   var(--steel-hi);padding:24px;display:flex;flex-direction:column}
+/* Keep the photo and drawing in view while choosing options */
+.stage-pin{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px + 16px)}
+.builder-stage .photo img{height:min(300px,calc(100vh - 64px - 170px))}
+.builder-stage .stage-svg{min-height:0}
+.builder-stage .stage-svg svg{max-height:min(420px,calc(100vh - 64px - 150px))}
 .stage-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .stage-code{font-size:28px;font-weight:600;letter-spacing:.01em}
 .stage-name{color:var(--muted);font-size:15px}
@@ -117,7 +122,19 @@ legend{font-size:15px;color:var(--muted);margin-bottom:8px;padding:0}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
 .specs{margin:0;padding:0 0 0 18px;color:var(--muted);font-size:15px}
 .specs li{margin:3px 0}
-@media (max-width:900px){.builder{grid-template-columns:1fr}.builder-panel{padding:22px 20px 26px}.stage-svg{min-height:0}.stage-body{grid-template-columns:1fr}.photo img{height:260px}}
+@media (max-width:900px){
+  .builder{grid-template-columns:1fr}
+  .builder-panel{padding:22px 20px 26px}
+  .photo img{height:260px}
+  /* Phone/tablet: a compact preview bar pinned under the header while the options scroll */
+  .builder-stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);z-index:5;padding:10px 14px 12px;border-bottom:1px solid var(--rule);box-shadow:0 6px 12px -8px rgba(0,0,0,.25)}
+  .stage-pin{position:static}
+  .stage-code{font-size:20px}
+  .stage-name{font-size:13px}
+  .stage-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:8px}
+  .builder-stage .photo img{height:clamp(120px,22vh,180px);padding:6px}
+  .builder-stage .stage-svg svg{max-height:clamp(120px,22vh,180px)}
+}
 
 /* Sections */
 section.block{padding:72px 0}
@@ -295,6 +312,7 @@ td.code{font-weight:600;white-space:nowrap}
 
       <div class="builder" id="build">
         <div class="builder-stage">
+          <div class="stage-pin">
           <div class="stage-head">
             <div class="stage-code" id="stCode">4WTU1</div>
             <div class="stage-name" id="stSize">1150 × 600 × 850 mm</div>
@@ -302,6 +320,7 @@ td.code{font-weight:600;white-space:nowrap}
           <div class="stage-body">
             <figure class="photo"><img id="stPhoto" src="img/wt-u1.jpg" alt="3D view of the work table with 1 under shelf"></figure>
             <div class="stage-svg" id="stSvg"></div>
+          </div>
           </div>
         </div>
         <div class="builder-panel">
