@@ -256,6 +256,12 @@ td.code{font-weight:600;white-space:nowrap}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .err{color:var(--danger);font-size:14px;min-height:1em;margin:0}
 .send{display:grid;gap:8px;margin-top:6px}
+.copy-opt{display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;padding:4px 0}
+.copy-opt input{width:18px;height:18px;accent-color:#C98A1A;margin:0}
+.field[hidden]{display:none}
+.mail-ok{margin-top:14px;border:1px solid #2E7D32;background:color-mix(in srgb,#2E7D32 10%,var(--surface));border-radius:6px;padding:12px 14px;font-size:14px}
+.mail-ok strong{display:block;font-size:15px;margin-bottom:4px}
+.mail-ok p{margin:0}
 .pdf-help{margin-top:14px;border:1px solid var(--gold-1);background:color-mix(in srgb,var(--gold-2) 16%,var(--surface));border-radius:6px;padding:12px 14px;font-size:14px}
 .pdf-help strong{display:block;font-size:15px;margin-bottom:4px}
 .pdf-help p{margin:0 0 10px;color:var(--text)}
@@ -1000,7 +1006,7 @@ body.has-cart{padding-bottom:84px}
   // Cart drawer
   const drawer=$("drawer"), scrim=$("scrim");
   let lastFocus=null;
-  function openCart(){ if(isPhone()) loadJsPdf().catch(()=>{}); lastFocus=document.activeElement; drawer.classList.add("open"); scrim.classList.add("open"); drawer.setAttribute("aria-hidden","false"); renderCart(); setTimeout(()=>$("closeCart").focus(),50); }
+  function openCart(){ loadJsPdf().catch(()=>{}); lastFocus=document.activeElement; drawer.classList.add("open"); scrim.classList.add("open"); drawer.setAttribute("aria-hidden","false"); renderCart(); setTimeout(()=>$("closeCart").focus(),50); }
   function closeCart(){ drawer.classList.remove("open"); scrim.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); if(lastFocus) lastFocus.focus(); }
   $("openCart").addEventListener("click",openCart);
   $("cartBarBtn").addEventListener("click",openCart);
@@ -1052,26 +1058,32 @@ body.has-cart{padding-bottom:84px}
         <h3>Your details</h3>
         <div class="field"><label for="fName">Name</label><input id="fName" autocomplete="name" value="${esc(customer.name)}"></div>
         <div class="field"><label for="fBiz">Business name (optional)</label><input id="fBiz" autocomplete="organization" value="${esc(customer.biz)}"></div>
+        <div class="field"><label for="fProj">Project name</label><input id="fProj" placeholder="e.g. Hotel kitchen, Whitefield" value="${esc(customer.project)}"></div>
         <div class="two">
           <div class="field"><label for="fPhone">Phone</label><input id="fPhone" type="tel" autocomplete="tel" value="${esc(customer.phone)}"></div>
           <div class="field"><label for="fCity">Delivery city</label><input id="fCity" autocomplete="address-level2" value="${esc(customer.city)}"></div>
         </div>
         <div class="field"><label for="fGst">GSTIN (optional)</label><input id="fGst" value="${esc(customer.gst)}"></div>
         <div class="field"><label for="fNote">Notes (optional)</label><textarea id="fNote" rows="2">${esc(customer.note)}</textarea></div>
+        <label class="copy-opt"><input type="checkbox" id="fCopy" ${customer.copy?"checked":""}> Email me a copy of this order</label>
+        <div class="field" id="fEmailWrap" ${customer.copy?"":"hidden"}><label for="fEmail">Your email</label><input id="fEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(customer.email)}"></div>
         <p class="err" id="fErr" role="alert"></p>
         <div class="send">
           <button class="btn btn-gold" id="sendWa">Send order on WhatsApp</button>
           <button class="btn btn-line" id="sendMail">Send order by email</button>
         </div>
+        ${mailState ? mailStatusHtml() : ""}
         ${lastPdf ? `<div class="pdf-help" id="pdfHelp" role="status">
           <strong>Attach your order PDF in WhatsApp</strong>
           <p>We saved <code>${esc(lastPdf.name)}</code> to your phone. In the WhatsApp chat with USP Essentials, tap the attach (📎) button, choose <b>Document</b>, and pick this file from Downloads.</p>
           <div class="row"><button type="button" class="btn btn-line btn-sm" id="pdfAgain">Save PDF again</button><button type="button" class="btn btn-line btn-sm" id="waAgain">Open WhatsApp again</button></div>
         </div>` : ""}
       </div>`;
-    ["fName","fBiz","fPhone","fCity","fGst","fNote"].forEach(id=>$(id).addEventListener("input",()=>{ customer = readForm(); saveCustomer(); }));
+    ["fName","fBiz","fProj","fPhone","fCity","fGst","fNote","fEmail"].forEach(id=>$(id).addEventListener("input",()=>{ customer = readForm(); saveCustomer(); }));
+    $("fCopy").addEventListener("change",()=>{ customer = readForm(); saveCustomer(); $("fEmailWrap").hidden = !customer.copy; if(customer.copy) $("fEmail").focus(); });
     $("sendWa").addEventListener("click",()=>send("wa"));
     $("sendMail").addEventListener("click",()=>send("mail"));
+    if(mailState && mailState.status==="fallback" && mailState.blob) $("mailPdfAgain").addEventListener("click",()=>downloadBlob(mailState.blob, mailState.pdfName));
     if(lastPdf){
       $("pdfAgain").addEventListener("click",()=>downloadBlob(lastPdf.blob, lastPdf.name));
       $("waAgain").addEventListener("click",()=>{ location.href = lastPdf.wa; });
@@ -1090,13 +1102,13 @@ body.has-cart{padding-bottom:84px}
     save(); renderCart();
   });
 
-  function readForm(){ return {name:$("fName").value.trim(), biz:$("fBiz").value.trim(), phone:$("fPhone").value.trim(), city:$("fCity").value.trim(), gst:$("fGst").value.trim(), note:$("fNote").value.trim()}; }
+  function readForm(){ return {name:$("fName").value.trim(), biz:$("fBiz").value.trim(), project:$("fProj").value.trim(), phone:$("fPhone").value.trim(), city:$("fCity").value.trim(), gst:$("fGst").value.trim(), note:$("fNote").value.trim(), copy:$("fCopy").checked, email:$("fEmail").value.trim()}; }
   function orderText(c, ref, pdfName){
     const t = totals();
     const lines = Object.entries(cart).map(([code,q])=>`${code} (${CATALOG[code].name}, ${CATALOG[code].size} mm) x ${q} = ${fmt(CATALOG[code].price*q)}`);
     return [
       "New order: USP Essentials", ref?`Order ref: ${ref}`:null, "",
-      `Name: ${c.name}`, c.biz?`Business: ${c.biz}`:null, `Phone: ${c.phone}`, `Delivery city: ${c.city}`, c.gst?`GSTIN: ${c.gst}`:null,"",
+      `Name: ${c.name}`, c.biz?`Business: ${c.biz}`:null, c.project?`Project: ${c.project}`:null, `Phone: ${c.phone}`, `Delivery city: ${c.city}`, c.gst?`GSTIN: ${c.gst}`:null,"",
       "Items:", ...lines, "",
       `Subtotal (excl. GST): ${fmt(t.sub)}`, `GST 18%: ${fmt(t.gst)}`, `Total: ${fmt(t.total)}`,
       "Shipping to be arranged and paid by buyer.",
@@ -1137,7 +1149,7 @@ body.has-cart{padding-bottom:84px}
     doc.setTextColor(20,23,26); y = 40;
     doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Customer", L, y); y += 6;
     doc.setFont("helvetica","normal"); doc.setFontSize(10);
-    [["Name", c.name], ["Business", c.biz], ["Phone", c.phone], ["Delivery city", c.city], ["GSTIN", c.gst]].forEach(([k,v])=>{
+    [["Name", c.name], ["Business", c.biz], ["Project", c.project], ["Phone", c.phone], ["Email", c.copy ? c.email : ""], ["Delivery city", c.city], ["GSTIN", c.gst]].forEach(([k,v])=>{
       if(!v) return; doc.setTextColor(88,98,106); doc.text(k, L, y); doc.setTextColor(20,23,26); doc.text(ascii(v), L+32, y); y += 5.5;
     });
     y += 4;
@@ -1178,10 +1190,54 @@ body.has-cart{padding-bottom:84px}
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 60000);
   }
+  // ---- Email: the site emails the order + PDF (Cloudflare function /api/send-order) ----
+  let mailState = null;
+  function mailStatusHtml(){
+    const m = mailState;
+    if (m.status === "sent") return `<div class="mail-ok" id="mailStatus" role="status"><strong>Order sent</strong><p>Your order ${esc(m.ref)} (${esc(m.total)}) has been emailed to USP Essentials with the PDF attached.${m.copyTo ? ` A copy is on its way to ${esc(m.copyTo)}.` : ""} We will confirm stock within 24 working hours.</p></div>`;
+    return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>We couldn't send the email from the site just now, so your email app has opened with the order filled in. Attach <code>${esc(m.pdfName)}</code> (saved to your Downloads) and press send.</p><div class="row"><button type="button" class="btn btn-line btn-sm" id="mailPdfAgain">Save PDF again</button><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
+  }
+  const blobToBase64 = blob => new Promise((ok, fail)=>{ const r = new FileReader(); r.onload = ()=> ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob); });
+  function mailSubject(c){ return `${c.name} – ${c.project} – ${fmt(totals().total)} (incl. GST)`; }
+  async function sendEmail(c, ref){
+    const btn = $("sendMail"); btn.disabled = true; btn.textContent = "Sending order…";
+    const pdfName = `Order-${ref}.pdf`; let blob = null;
+    try {
+      const JsPDF = await loadJsPdf();
+      blob = buildPdf(JsPDF, c, ref);
+      const t = totals();
+      const payload = {
+        ref, copy: !!c.copy,
+        customer: {name:c.name, biz:c.biz, project:c.project, phone:c.phone, city:c.city, gst:c.gst, note:c.note, email: c.copy ? c.email : ""},
+        items: Object.entries(cart).map(([code,q])=>({code, name:CATALOG[code].name, size:CATALOG[code].size, qty:q, rate:CATALOG[code].price})),
+        pdf: {name: pdfName, base64: await blobToBase64(blob)}
+      };
+      const res = await fetch("/api/send-order", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)});
+      const out = await res.json().catch(()=>({}));
+      if (!res.ok || !out.ok) throw new Error(out.error || ("HTTP " + res.status));
+      mailState = {status:"sent", ref, total: fmt(t.total), copyTo: out.copied ? c.email : ""};
+      renderCart();
+    } catch (err) {
+      // Fallback: save the PDF and open the customer's email app, filled in
+      const q = new URLSearchParams();
+      if (c.copy && c.email) q.set("cc", c.email);
+      q.set("subject", mailSubject(c)); q.set("body", orderText(c, ref, blob ? pdfName : null));
+      const mailto = `mailto:${EMAIL}?` + q.toString().replace(/\+/g, "%20");
+      if (blob) downloadBlob(blob, pdfName);
+      mailState = {status:"fallback", ref, pdfName, mailto, blob};
+      renderCart();
+      location.href = mailto;
+    }
+    const s = $("mailStatus"); if (s) s.scrollIntoView({block:"center"});
+  }
+
   function send(via){
     const c = readForm(); customer=c; saveCustomer();
     const missing=[];
     $("fName").setAttribute("aria-invalid", String(!c.name)); if(!c.name) missing.push("name");
+    $("fProj").setAttribute("aria-invalid", String(!c.project)); if(!c.project) missing.push("project name");
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email);
+    $("fEmail").setAttribute("aria-invalid", String(c.copy && !emailOk)); if(c.copy && !emailOk) missing.push("email address for your copy");
     const phoneOk = c.phone.replace(/\D/g,"").length>=10;
     $("fPhone").setAttribute("aria-invalid", String(!phoneOk)); if(!phoneOk) missing.push("a 10-digit phone number");
     $("fCity").setAttribute("aria-invalid", String(!c.city)); if(!c.city) missing.push("delivery city");
@@ -1205,7 +1261,7 @@ body.has-cart{padding-bottom:84px}
         location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(orderText(c, ref))}`;
       });
     }
-    else { window.open(`mailto:${EMAIL}?subject=${encodeURIComponent("Order "+ref+": USP Essentials - "+(c.biz||c.name))}&body=${encodeURIComponent(orderText(c, ref))}`,"_blank"); }
+    else { sendEmail(c, ref); }
   }
 
   // "Added" confirmation shown inside the floating cart bar
