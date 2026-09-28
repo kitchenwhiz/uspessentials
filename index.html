@@ -259,6 +259,7 @@ td.code{font-weight:600;white-space:nowrap}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .err{color:var(--danger);font-size:14px;min-height:1em;margin:0}
 .send{display:grid;gap:8px;margin-top:6px}
+.field-hint{margin:-4px 0 0;font-size:13px;color:var(--muted)}
 .copy-opt{display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;padding:4px 0}
 .copy-opt input{width:18px;height:18px;accent-color:#C98A1A;margin:0}
 .field[hidden]{display:none}
@@ -1061,17 +1062,8 @@ body.has-cart{padding-bottom:84px}
       <p class="note">Send this order and we will confirm stock within 24 working hours and share payment details. Processing starts after 100% advance payment.</p>
       <div class="form" id="orderForm">
         <h3>Your details</h3>
-        <div class="field"><label for="fName">Name</label><input id="fName" autocomplete="name" value="${esc(customer.name)}"></div>
-        <div class="field"><label for="fBiz">Business name (optional)</label><input id="fBiz" autocomplete="organization" value="${esc(customer.biz)}"></div>
-        <div class="field"><label for="fProj">Project name</label><input id="fProj" placeholder="e.g. Hotel kitchen, Whitefield" value="${esc(customer.project)}"></div>
-        <div class="two">
-          <div class="field"><label for="fPhone">Phone</label><input id="fPhone" type="tel" autocomplete="tel" value="${esc(customer.phone)}"></div>
-          <div class="field"><label for="fCity">Delivery city</label><input id="fCity" autocomplete="address-level2" value="${esc(customer.city)}"></div>
-        </div>
-        <div class="field"><label for="fGst">GSTIN (optional)</label><input id="fGst" value="${esc(customer.gst)}"></div>
-        <div class="field"><label for="fNote">Notes (optional)</label><textarea id="fNote" rows="2">${esc(customer.note)}</textarea></div>
-        <label class="copy-opt"><input type="checkbox" id="fCopy" ${customer.copy?"checked":""}> Email me a copy of this order</label>
-        <div class="field" id="fEmailWrap" ${customer.copy?"":"hidden"}><label for="fEmail">Your email</label><input id="fEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(customer.email)}"></div>
+        <div class="field"><label for="fPhone">Phone number</label><input id="fPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. 98450 12345" value="${esc(customer.phone)}"></div>
+        <p class="field-hint">Needed to send by email. On WhatsApp we see your number, so you can send right away.</p>
         <p class="err" id="fErr" role="alert"></p>
         <div class="send">
           <button class="btn btn-gold" id="sendWa">Send order on WhatsApp</button>
@@ -1084,8 +1076,7 @@ body.has-cart{padding-bottom:84px}
           <div class="row"><button type="button" class="btn btn-line btn-sm" id="pdfAgain">Save PDF again</button><button type="button" class="btn btn-line btn-sm" id="waAgain">Open WhatsApp again</button></div>
         </div>` : ""}
       </div>`;
-    ["fName","fBiz","fProj","fPhone","fCity","fGst","fNote","fEmail"].forEach(id=>$(id).addEventListener("input",()=>{ customer = readForm(); saveCustomer(); }));
-    $("fCopy").addEventListener("change",()=>{ customer = readForm(); saveCustomer(); $("fEmailWrap").hidden = !customer.copy; if(customer.copy) $("fEmail").focus(); });
+    $("fPhone").addEventListener("input",()=>{ customer = readForm(); saveCustomer(); });
     $("sendWa").addEventListener("click",()=>send("wa"));
     $("sendMail").addEventListener("click",()=>send("mail"));
     if(mailState && mailState.status==="fallback" && mailState.blob) $("mailPdfAgain").addEventListener("click",()=>downloadBlob(mailState.blob, mailState.pdfName));
@@ -1107,13 +1098,14 @@ body.has-cart{padding-bottom:84px}
     save(); renderCart();
   });
 
-  function readForm(){ return {name:$("fName").value.trim(), biz:$("fBiz").value.trim(), project:$("fProj").value.trim(), phone:$("fPhone").value.trim(), city:$("fCity").value.trim(), gst:$("fGst").value.trim(), note:$("fNote").value.trim(), copy:$("fCopy").checked, email:$("fEmail").value.trim()}; }
+  // Only the phone number is collected; the other fields stay empty
+  function readForm(){ return {name:"", biz:"", project:"", phone:$("fPhone").value.trim(), city:"", gst:"", note:"", copy:false, email:""}; }
   function orderText(c, ref, pdfName){
     const t = totals();
     const lines = Object.entries(cart).map(([code,q])=>`${code} (${CATALOG[code].name}, ${CATALOG[code].size} mm) x ${q} = ${fmt(CATALOG[code].price*q)}`);
     return [
       "New order: USP Essentials", ref?`Order ref: ${ref}`:null, "",
-      `Name: ${c.name}`, c.biz?`Business: ${c.biz}`:null, c.project?`Project: ${c.project}`:null, `Phone: ${c.phone}`, `Delivery city: ${c.city}`, c.gst?`GSTIN: ${c.gst}`:null,"",
+      c.phone?`Phone: ${c.phone}`:null, "",
       "Items:", ...lines, "",
       `Subtotal (excl. GST): ${fmt(t.sub)}`, `GST 18%: ${fmt(t.gst)}`, `Total: ${fmt(t.total)}`,
       "Shipping to be arranged and paid by buyer.",
@@ -1154,7 +1146,7 @@ body.has-cart{padding-bottom:84px}
     doc.setTextColor(20,23,26); y = 40;
     doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Customer", L, y); y += 6;
     doc.setFont("helvetica","normal"); doc.setFontSize(10);
-    [["Name", c.name], ["Business", c.biz], ["Project", c.project], ["Phone", c.phone], ["Email", c.copy ? c.email : ""], ["Delivery city", c.city], ["GSTIN", c.gst]].forEach(([k,v])=>{
+    [["Phone", c.phone || "Sent via WhatsApp"]].forEach(([k,v])=>{
       if(!v) return; doc.setTextColor(88,98,106); doc.text(k, L, y); doc.setTextColor(20,23,26); doc.text(ascii(v), L+32, y); y += 5.5;
     });
     y += 4;
@@ -1203,14 +1195,14 @@ body.has-cart{padding-bottom:84px}
     return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>We couldn't send the email from the site just now, so your email app has opened with the order filled in. Attach <code>${esc(m.pdfName)}</code> (saved to your Downloads) and press send.</p><div class="row"><button type="button" class="btn btn-line btn-sm" id="mailPdfAgain">Save PDF again</button><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
   }
   const blobToBase64 = blob => new Promise((ok, fail)=>{ const r = new FileReader(); r.onload = ()=> ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob); });
-  function mailSubject(c, ref){ const t = totals(); return `Order ${ref} | ${fmt(t.total)} | Qty ${t.units} | ${c.name} | ${c.project}`; }
+  function mailSubject(c, ref){ const t = totals(); return `Order ${ref} | ${fmt(t.total)} | Qty ${t.units}${c.phone ? " | " + c.phone : ""}`; }
   // Short WhatsApp summary: order number, amount, customer details, SKU | Qty | Amount, totals
   function waSummary(c, ref, sent){
     const emailed = !!(sent && sent.emailed), driveUrl = sent && sent.driveUrl;
     const t = totals();
     return [
       `*New order ${ref}*`, `Amount: ${fmt(t.total)} (incl. GST)`, "",
-      `Name: ${c.name}`, c.biz?`Business: ${c.biz}`:null, `Project: ${c.project}`, `Phone: ${c.phone}`, `City: ${c.city}`, c.gst?`GSTIN: ${c.gst}`:null, (c.copy&&c.email)?`Email: ${c.email}`:null, "",
+      c.phone?`Phone: ${c.phone}`:null, c.phone?"":null,
       "SKU | Qty | Amount",
       ...Object.entries(cart).map(([code,q])=>`${code} | ${q} | ${fmt(CATALOG[code].price*q)}`),
       `Subtotal: ${fmt(t.sub)}`, `GST 18%: ${fmt(t.gst)}`, `*Total: ${fmt(t.total)}*`,
@@ -1286,15 +1278,10 @@ body.has-cart{padding-bottom:84px}
 
   function send(via){
     const c = readForm(); customer=c; saveCustomer();
-    const missing=[];
-    $("fName").setAttribute("aria-invalid", String(!c.name)); if(!c.name) missing.push("name");
-    $("fProj").setAttribute("aria-invalid", String(!c.project)); if(!c.project) missing.push("project name");
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email);
-    $("fEmail").setAttribute("aria-invalid", String(c.copy && !emailOk)); if(c.copy && !emailOk) missing.push("email address for your copy");
+    // WhatsApp can always be sent (the number shows in WhatsApp); email needs the phone number
     const phoneOk = c.phone.replace(/\D/g,"").length>=10;
-    $("fPhone").setAttribute("aria-invalid", String(!phoneOk)); if(!phoneOk) missing.push("a 10-digit phone number");
-    $("fCity").setAttribute("aria-invalid", String(!c.city)); if(!c.city) missing.push("delivery city");
-    if(missing.length){ $("fErr").textContent = "Add your " + missing.join(", ") + " to send the order."; return; }
+    $("fPhone").setAttribute("aria-invalid", String(via!=="wa" && !phoneOk));
+    if(via!=="wa" && !phoneOk){ $("fErr").textContent = "Add your 10-digit phone number to send the order by email."; $("fPhone").focus(); return; }
     $("fErr").textContent = "";
     const ref = orderRef();
     if(via==="wa"){ sendWhatsApp(c, ref); }

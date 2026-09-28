@@ -51,8 +51,10 @@ export async function onRequestPost({ request, env }) {
   const ref = /^USP-\d{6}-\d{4}(\d{2})?$/.test(d.ref || "") ? d.ref : "USP-order";
   const viaWhatsApp = d.source === "whatsapp";
   const wantCopy = !!d.copy;
-  if (!cust.name || !cust.project || !cust.city || cust.phone.replace(/\D/g, "").length < 10)
-    return json({ ok: false, error: "missing_fields" }, 400);
+  // Only the phone number is collected. WhatsApp orders may come without it (the
+  // number shows in WhatsApp); email orders need it.
+  const phoneDigits = cust.phone.replace(/[^\d+]/g, "");
+  if (!viaWhatsApp && cust.phone.replace(/\D/g, "").length < 10) return json({ ok: false, error: "missing_fields" }, 400);
   if (wantCopy && !emailOk(cust.email)) return json({ ok: false, error: "bad_email" }, 400);
   if (cust.email && !emailOk(cust.email)) cust.email = "";
 
@@ -80,14 +82,14 @@ export async function onRequestPost({ request, env }) {
   // ---- 1. save the PDF to Google Drive ----
   let driveUrl = "", driveError = "";
   if (driveOn) {
-    const safe = (s) => s.replace(/[\\/:*?"<>|#%]+/g, " ").replace(/\s{2,}/g, " ").trim().slice(0, 60);
-    const driveName = `${ref} - ${safe(cust.name)} - ${safe(cust.project)}.pdf`;
+    // File name: order number + phone, e.g. "USP-260928-173300 - 9886672354.pdf"
+    const driveName = `${ref}${phoneDigits ? ` - ${phoneDigits}` : ""}.pdf`;
     try {
       const r = await fetch(env.DRIVE_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "application/json" }, redirect: "follow",
         body: JSON.stringify({
           token: env.DRIVE_TOKEN, name: driveName, base64: pdfB64,
-          description: `Order ${ref} | ${inr(total)} | Qty ${units} | ${cust.name} | ${cust.project} | ${cust.phone}`,
+          description: `Order ${ref} | ${inr(total)} | Qty ${units}${cust.phone ? ` | ${cust.phone}` : ""}`,
         }),
       });
       const raw = await r.text();
@@ -99,7 +101,7 @@ export async function onRequestPost({ request, env }) {
 
   // ---- compose ----
   // Subject: order number, total, quantity, name, project
-  const subject = `Order ${ref} | ${inr(total)} | Qty ${units} | ${cust.name} | ${cust.project}`;
+  const subject = `Order ${ref} | ${inr(total)} | Qty ${units}${cust.phone ? ` | ${cust.phone}` : ""}`;
   const detailRows = [
     ["Order ref", ref], ["Name", cust.name], ["Business", cust.biz], ["Project", cust.project],
     ["Phone", cust.phone], ["Email", cust.email], ["Delivery city", cust.city], ["GSTIN", cust.gst],
@@ -154,8 +156,8 @@ export async function onRequestPost({ request, env }) {
     const ownerRes = await sendMail({
       from: env.MAIL_FROM, to: [ownerTo], subject,
       ...(cust.email ? { reply_to: cust.email } : {}),
-      html: html(`New order from <b>${esc(cust.name)}</b> for <b>${esc(cust.project)}</b>.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`, true),
-      text: text(`New order from ${cust.name} for ${cust.project}.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`, true),
+      html: html(`New order ${esc(ref)}${cust.phone ? ` from <b>${esc(cust.phone)}</b>` : ""}.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`, true),
+      text: text(`New order ${ref}${cust.phone ? ` from ${cust.phone}` : ""}.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`, true),
       attachments,
     });
     emailed = ownerRes.ok;
