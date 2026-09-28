@@ -2,19 +2,22 @@
  * USP Essentials – save order PDFs to Google Drive
  *
  * The website's server sends each order PDF here; this script saves it into the
- * "uspecoline orders" folder of the Google account that runs it (created automatically
- * in My Drive if it doesn't exist), one sub-folder per month (e.g. "2026-09"), and
- * returns the link.
+ * "UPS_ecoline_orders" folder of the Google account that runs it, one sub-folder per
+ * month (e.g. "2026-09"), and returns the link. (If the folder can't be found it is
+ * created in My Drive.)
  *
- * Setup (once, signed in as tradelinkscorporation@gmail.com):
+ * Setup (once, signed in as operations@kitchenwhiz.in):
  *  1. Go to https://script.google.com → New project. Delete what's there, paste this
  *     whole file, and set TOKEN below to a long random secret (30+ letters and
  *     numbers). Save.
  *     Then choose "setupCheck" in the toolbar and click Run once: allow the permissions;
- *     this creates the "uspecoline orders" folder in My Drive.
+ *     the log should show the UPS_ecoline_orders folder link.
  *  2. Deploy → New deployment → type "Web app".
  *       Execute as:    Me
  *       Who has access: Anyone
+ *     (If "Anyone" isn't offered, the Google Workspace admin for kitchenwhiz.in must
+ *     allow it: Admin console → Apps → Google Workspace → Drive and Docs / Apps Script
+ *     sharing settings.)
  *     Deploy, allow the permissions it asks for, and copy the Web app URL.
  *  3. In Cloudflare → Pages project → Settings → Variables and secrets, add
  *       DRIVE_SCRIPT_URL = the Web app URL
@@ -25,15 +28,17 @@
  * you share the folder with), not for the public. Requests without the TOKEN are refused.
  */
 
-const ROOT_FOLDER_NAME = 'uspecoline orders';
+const ROOT_FOLDER_NAME = 'UPS_ecoline_orders';
+// Optional: paste the folder ID (from its address bar, after /folders/) to pin the exact folder.
+const ROOT_FOLDER_ID = '';
 const TOKEN = 'PASTE_A_LONG_RANDOM_SECRET_HERE';
 
 /**
  * Run this once from the editor (select "setupCheck" → Run) to grant permissions and
- * create the "uspecoline orders" folder. It logs the folder link.
+ * check it can reach the UPS_ecoline_orders folder. It logs the folder link.
  */
 function setupCheck() {
-  const f = childFolder_(DriveApp.getRootFolder(), ROOT_FOLDER_NAME);
+  const f = rootFolder_();
   Logger.log('Orders folder ready: ' + f.getUrl());
 }
 
@@ -49,7 +54,7 @@ function doPost(e) {
     if (head !== '%PDF-') return reply_({ ok: false, error: 'bad_pdf' });
 
     const month = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM');
-    const folder = childFolder_(childFolder_(DriveApp.getRootFolder(), ROOT_FOLDER_NAME), month);
+    const folder = childFolder_(rootFolder_(), month);
     const file = folder.createFile(Utilities.newBlob(bytes, 'application/pdf', name));
     if (d.description) file.setDescription(String(d.description).slice(0, 500));
 
@@ -57,6 +62,12 @@ function doPost(e) {
   } catch (err) {
     return reply_({ ok: false, error: 'server_error' });
   }
+}
+
+function rootFolder_() {
+  if (ROOT_FOLDER_ID) return DriveApp.getFolderById(ROOT_FOLDER_ID);
+  const found = DriveApp.getFoldersByName(ROOT_FOLDER_NAME);   // anywhere in this account's Drive
+  return found.hasNext() ? found.next() : DriveApp.getRootFolder().createFolder(ROOT_FOLDER_NAME);
 }
 
 function childFolder_(parent, name) {
