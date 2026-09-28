@@ -256,6 +256,11 @@ td.code{font-weight:600;white-space:nowrap}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .err{color:var(--danger);font-size:14px;min-height:1em;margin:0}
 .send{display:grid;gap:8px;margin-top:6px}
+/* WhatsApp ordering only on phones/tablets; on laptops/desktops (mouse) email is the main button */
+@media (hover:hover) and (pointer:fine){
+  #sendWa{display:none}
+  #sendMail{background:linear-gradient(135deg,var(--gold-1),var(--gold-2));color:#000;border:0}
+}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
 .empty .btn{margin-top:14px}
 
