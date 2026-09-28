@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>USP Essentials | Stainless steel work tables and racks</title>
-<meta name="description" content="Standard-size SS430 stainless steel work tables, overhead shelves and storage racks. Flat-packed from Bengaluru. Order online.">
+<meta name="description" content="Standard-size stainless steel work tables, storage racks, grease traps and drain gratings from Bengaluru. Order online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -81,7 +81,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stage-svg{display:grid;place-items:center;min-height:320px}
 .photo{margin:0;background:#fff;border:1px solid var(--rule);border-radius:4px}
 .photo img{display:block;width:100%;height:300px;object-fit:contain;padding:12px}
-.product .photo img{height:220px}
 .stage-svg svg{width:100%;height:auto;max-height:470px}
 .builder-panel{padding:28px 28px 30px;display:flex;flex-direction:column;gap:22px}
 .builder-panel h2{font-size:24px;font-weight:500;margin:0}
@@ -142,17 +141,9 @@ section.block{padding:72px 0}
 .sec-head h2{font-size:clamp(28px,3.4vw,38px);font-weight:400;letter-spacing:-.01em;margin:0;line-height:1.1}
 .sec-head p{color:var(--muted);margin:8px 0 0;max-width:60ch}
 
-.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.product{background:var(--surface);border:1px solid var(--rule);border-radius:6px;display:grid;grid-template-rows:auto 1fr}
-.product .pic{background:var(--steel-hi);border-bottom:1px solid var(--rule);display:grid;gap:14px;align-content:start;justify-items:stretch;padding:18px;min-height:250px;border-radius:6px 6px 0 0}
-.product .pic > svg{justify-self:center}
-.product .pic svg{width:100%;max-height:260px}
-.product .body{padding:22px;display:flex;flex-direction:column;gap:16px}
-.product h3{margin:0;font-size:22px;font-weight:500}
-.product .meta{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
-.product .code{font-weight:600}
-.product .price{font-size:26px;font-weight:600}
-.product .actions{display:flex;gap:10px;margin-top:auto;flex-wrap:wrap}
+.product-list{display:flex;flex-direction:column;gap:28px}
+.product-b{margin-top:0;border:1px solid var(--rule);border-radius:6px}
+.product-b .builder-panel h3{font-size:24px;font-weight:500;margin:0}
 
 
 /* Price list */
@@ -373,53 +364,90 @@ td.code{font-weight:600;white-space:nowrap}
       <div class="sec-head">
         <div>
           <h2>Shelves and racks</h2>
-          <p>Stainless steel shelving in the same SS430 as the work tables, plus a lower-cost mild steel rack for dry stores. The overhead shelves also fit on any table above.</p>
+          <p>Stainless steel shelving in the same SS430 as the work tables, plus a lower-cost mild steel rack for dry stores.</p>
         </div>
       </div>
-      <div class="products">
-        <article class="product" id="pOHS">
-          <div class="pic" data-pic></div>
-          <div class="body">
-            <h3>2 overhead shelves</h3>
-            <div class="seg" data-sizes></div>
-            <div class="meta"><span class="code" data-code></span><span class="price" data-price></span></div>
-            <ul class="specs">
-              <li>SS430 0.8 mm (22G) shelves with SS stiffener support</li>
-              <li>Ø32 mm pipe legs with SS clamp fitting</li>
-              <li>Shelf heights 450 mm and 775 mm, depth 305 mm</li>
-              <li>Mounting option for HeatKO IR500 and IR800 heaters</li>
-            </ul>
-            <div class="actions"><button class="btn btn-dark" data-add>Add to cart</button></div>
+      <div class="product-list">
+        <article class="builder product-b" id="pRack">
+          <div class="builder-stage">
+            <div class="stage-pin">
+              <div class="stage-head">
+                <div class="stage-code" data-code></div>
+                <div class="stage-name" data-size></div>
+              </div>
+              <div class="stage-body">
+                <figure class="photo"><img data-photo alt="" decoding="async"></figure>
+                <div class="stage-svg" data-draw></div>
+              </div>
+            </div>
           </div>
-        </article>
-        <article class="product" id="pRack">
-          <div class="pic" data-pic></div>
-          <div class="body">
+          <div class="builder-panel">
             <h3>5-tier storage rack</h3>
-            <div class="seg" data-sizes></div>
-            <div class="meta"><span class="code" data-code></span><span class="price" data-price></span></div>
+            <fieldset>
+              <legend>Length (depth 450 mm, height 1800 mm)</legend>
+              <div class="seg" data-sizes></div>
+            </fieldset>
             <ul class="specs">
               <li>SS430 0.8 mm (22G) racks, 5 no., with SS stiffener support</li>
               <li>Ø38 mm pipe legs with nylon leg bush</li>
               <li>1800 mm tall, 450 mm deep</li>
               <li>Assembles and dismantles with Allen screws</li>
             </ul>
-            <div class="actions"><button class="btn btn-dark" data-add>Add to cart</button></div>
+            <div class="price-row">
+              <div>
+                <div class="price-big" data-price></div>
+                <div class="price-sub" data-incl></div>
+              </div>
+              <div class="buy-row">
+                <div class="qty" aria-label="Quantity">
+                  <button type="button" data-qminus aria-label="Decrease quantity">−</button>
+                  <input type="number" data-qty value="1" min="1" max="999" inputmode="numeric" aria-label="Quantity">
+                  <button type="button" data-qplus aria-label="Increase quantity">+</button>
+                </div>
+                <button class="btn btn-gold" data-add>Add to cart</button>
+              </div>
+            </div>
           </div>
         </article>
-        <article class="product" id="pMS">
-          <div class="pic" data-pic></div>
-          <div class="body">
+        <article class="builder product-b" id="pMS">
+          <div class="builder-stage">
+            <div class="stage-pin">
+              <div class="stage-head">
+                <div class="stage-code" data-code></div>
+                <div class="stage-name" data-size></div>
+              </div>
+              <div class="stage-body">
+                <figure class="photo"><img data-photo alt="" decoding="async"></figure>
+                <div class="stage-svg" data-draw></div>
+              </div>
+            </div>
+          </div>
+          <div class="builder-panel">
             <h3>5-tier MS storage rack</h3>
-            <div class="seg" data-sizes></div>
-            <div class="meta"><span class="code" data-code></span><span class="price" data-price></span></div>
+            <fieldset>
+              <legend>Length (depth 425 mm, height 1800 mm)</legend>
+              <div class="seg" data-sizes></div>
+            </fieldset>
             <ul class="specs">
               <li>Coated MS 0.8 mm (22G) racks, 5 no., with stiffener support</li>
               <li>Slotted MS L-angle posts, so shelf heights can be adjusted</li>
               <li>Corner clamps for mounting the racks</li>
               <li>1800 mm tall, 425 mm deep; ships flat-packed</li>
             </ul>
-            <div class="actions"><button class="btn btn-dark" data-add>Add to cart</button></div>
+            <div class="price-row">
+              <div>
+                <div class="price-big" data-price></div>
+                <div class="price-sub" data-incl></div>
+              </div>
+              <div class="buy-row">
+                <div class="qty" aria-label="Quantity">
+                  <button type="button" data-qminus aria-label="Decrease quantity">−</button>
+                  <input type="number" data-qty value="1" min="1" max="999" inputmode="numeric" aria-label="Quantity">
+                  <button type="button" data-qplus aria-label="Increase quantity">+</button>
+                </div>
+                <button class="btn btn-gold" data-add>Add to cart</button>
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -434,36 +462,88 @@ td.code{font-weight:600;white-space:nowrap}
           <p>Grease traps and floor drain gratings in SS304, the more corrosion-resistant grade, for the wettest parts of the kitchen.</p>
         </div>
       </div>
-      <div class="products">
-        <article class="product" id="pGT">
-          <div class="pic" data-pic></div>
-          <div class="body">
+      <div class="product-list">
+        <article class="builder product-b" id="pGT">
+          <div class="builder-stage">
+            <div class="stage-pin">
+              <div class="stage-head">
+                <div class="stage-code" data-code></div>
+                <div class="stage-name" data-size></div>
+              </div>
+              <div class="stage-body">
+                <figure class="photo"><img data-photo alt="" decoding="async"></figure>
+                <div class="stage-svg" data-draw></div>
+              </div>
+            </div>
+          </div>
+          <div class="builder-panel">
             <h3>SS grease trap</h3>
-            <div class="seg" data-sizes></div>
-            <div class="meta"><span class="code" data-code></span><span class="price" data-price></span></div>
-            <p class="stage-name" data-extra style="margin:0"></p>
+            <fieldset>
+              <legend>Capacity</legend>
+              <div class="seg" data-sizes></div>
+            </fieldset>
+            <p class="price-sub" data-extra style="margin:-10px 0 0"></p>
             <ul class="specs">
               <li>SS304 1.2 mm (18G) body and lid</li>
               <li>SS304 1.0 mm (20G) baffle plates</li>
               <li>Removable perforated scrap basket with handle</li>
               <li>SS Ø38 mm (1½ inch) inlet and outlet pipes</li>
             </ul>
-            <div class="actions"><button class="btn btn-dark" data-add>Add to cart</button></div>
+            <div class="price-row">
+              <div>
+                <div class="price-big" data-price></div>
+                <div class="price-sub" data-incl></div>
+              </div>
+              <div class="buy-row">
+                <div class="qty" aria-label="Quantity">
+                  <button type="button" data-qminus aria-label="Decrease quantity">−</button>
+                  <input type="number" data-qty value="1" min="1" max="999" inputmode="numeric" aria-label="Quantity">
+                  <button type="button" data-qplus aria-label="Increase quantity">+</button>
+                </div>
+                <button class="btn btn-gold" data-add>Add to cart</button>
+              </div>
+            </div>
           </div>
         </article>
-        <article class="product" id="pDG">
-          <div class="pic" data-pic></div>
-          <div class="body">
+        <article class="builder product-b" id="pDG">
+          <div class="builder-stage">
+            <div class="stage-pin">
+              <div class="stage-head">
+                <div class="stage-code" data-code></div>
+                <div class="stage-name" data-size></div>
+              </div>
+              <div class="stage-body">
+                <figure class="photo"><img data-photo alt="" decoding="async"></figure>
+                <div class="stage-svg" data-draw></div>
+              </div>
+            </div>
+          </div>
+          <div class="builder-panel">
             <h3>SS drain trough grating</h3>
-            <div class="seg wrap" data-sizes></div>
-            <div class="meta"><span class="code" data-code></span><span class="price" data-price></span></div>
+            <fieldset>
+              <legend>Size (length × width, mm)</legend>
+              <div class="seg wrap" data-sizes></div>
+            </fieldset>
             <ul class="specs">
               <li>SS304 1.2 mm (18G) drain trough, 75 mm deep</li>
               <li>SS304 3 mm anti-slip grating on top</li>
               <li>SS304 1.2 mm perforated scrap basket</li>
               <li>SS304 Ø100 × 75 mm pipe drain connector</li>
             </ul>
-            <div class="actions"><button class="btn btn-dark" data-add>Add to cart</button></div>
+            <div class="price-row">
+              <div>
+                <div class="price-big" data-price></div>
+                <div class="price-sub" data-incl></div>
+              </div>
+              <div class="buy-row">
+                <div class="qty" aria-label="Quantity">
+                  <button type="button" data-qminus aria-label="Decrease quantity">−</button>
+                  <input type="number" data-qty value="1" min="1" max="999" inputmode="numeric" aria-label="Quantity">
+                  <button type="button" data-qplus aria-label="Increase quantity">+</button>
+                </div>
+                <button class="btn btn-gold" data-add>Add to cart</button>
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -486,7 +566,6 @@ td.code{font-weight:600;white-space:nowrap}
           <button class="chip" data-f="C" aria-pressed="false">Cross support tables</button>
           <button class="chip" data-f="U1" aria-pressed="false">1 under shelf</button>
           <button class="chip" data-f="U2" aria-pressed="false">2 under shelves</button>
-          <button class="chip" data-f="ohs" aria-pressed="false">Overhead shelves</button>
           <button class="chip" data-f="rack" aria-pressed="false">SS racks</button>
           <button class="chip" data-f="msrack" aria-pressed="false">MS racks</button>
           <button class="chip" data-f="gtrap" aria-pressed="false">Grease traps</button>
@@ -501,7 +580,7 @@ td.code{font-weight:600;white-space:nowrap}
           <tbody id="plBody"></tbody>
         </table>
       </div>
-      <p class="code-key">Reading the codes: the first digit is the length (3 = 900, 4 = 1150, 5 = 1500 mm). WT work table, C cross support, U1/U2 under shelves, O2 two overhead shelves, B back splash, OHS overhead shelf, TR tier rack, MSR MS storage rack, GT grease trap, DG drain grating.</p>
+      <p class="code-key">Reading the codes: the first digit is the length (3 = 900, 4 = 1150, 5 = 1500 mm). WT work table, C cross support, U1/U2 under shelves, O2 two overhead shelves, B back splash, TR tier rack, MSR MS storage rack, GT grease trap, DG drain grating.</p>
       </div>
     </div>
   </section>
@@ -594,7 +673,6 @@ td.code{font-weight:600;white-space:nowrap}
     U1: ["SS430 1.2 mm (18G) top with SS stiffener support","SS430 0.8 mm (22G) under shelf with stiffener","Ø38 mm pipe legs with nylon leg bush"],
     U2: ["SS430 1.2 mm (18G) top with SS stiffener support","Two SS430 0.8 mm (22G) under shelves with stiffener","Ø38 mm pipe legs with nylon leg bush"]
   };
-  const OHS_PRICES = {3:13000, 4:14500, 5:16000};
   const RACKS = {3:{code:"5TR3", price:22000}, 4:{code:"5TR4", price:25000}};
   const MS_RACKS = {900:{code:"MSR94H", price:8000}, 1200:{code:"MSR124H", price:10000}};
   const LEN2N = {900:3, 1150:4, 1500:5};
@@ -623,7 +701,6 @@ td.code{font-weight:600;white-space:nowrap}
   ["C","U1","U2"].forEach(b=>[3,4,5].forEach(n=>[[0,0],[1,0],[0,1],[1,1]].forEach(([B,O])=>{
     addSku({code:tableCode(b,n,B,O), name:tableName(b,B,O), size:`${SIZES[n]} × 600 × 850`, price:tablePrice(b,n,B,O), group:b});
   })));
-  [3,4,5].forEach(n=>addSku({code:`${n}OHS2`, name:"2 overhead shelves", size:`${SIZES[n]} × 305 × (450+325)`, price:OHS_PRICES[n], group:"ohs"}));
   [3,4].forEach(n=>addSku({code:RACKS[n].code, name:"5-tier SS storage rack", size:`${SIZES[n]} × 450 × 1800`, price:RACKS[n].price, group:"rack"}));
   [900,1200].forEach(L=>addSku({code:MS_RACKS[L].code, name:"5-tier MS storage rack", size:`${L} × 425 × 1800`, price:MS_RACKS[L].price, group:"msrack"}));
   GTRAPS.forEach(g=>addSku({code:g.code, name:`SS grease trap, ${g.vol} L, ${g.flow} LPH`, size:`${g.L} × ${g.D} × ${g.H}`, price:g.price, group:"gtrap"}));
@@ -682,16 +759,6 @@ td.code{font-weight:600;white-space:nowrap}
     g += vDim(x0-24,Y(850),floor,"850");
     if(O) g += vDim(x1+24,Y(850+775),Y(850),"775");
     return `<svg viewBox="0 0 ${W} 492" role="img" aria-label="Front view drawing of ${tableName(b,B,O)}, ${L} mm long">${g}</svg>`;
-  }
-
-  function ohsSVG(n){
-    const s=.19, W=340, floor=186, L=SIZES[n], Lp=L*s, x0=(W-Lp)/2, x1=x0+Lp, Y=mm=>floor-mm*s, pw=32*s;
-    let g = `<line class="d-floor" x1="10" y1="${floor}" x2="${W-10}" y2="${floor}"/>`;
-    g += r(x0+6,Y(775),pw,775*s,"d-leg") + r(x1-6-pw,Y(775),pw,775*s,"d-leg");
-    g += r(x0+3,floor-3,pw+6,3,"d-bush") + r(x1-9-pw,floor-3,pw+6,3,"d-bush");
-    g += r(x0,Y(775),Lp,6,"d-slab") + r(x0,Y(450),Lp,6,"d-slab");
-    g += hDim(x0,x1,floor+14,`L ${L} mm`);
-    return `<svg viewBox="0 0 ${W} 218" role="img" aria-label="Drawing of 2 overhead shelves, ${L} mm long">${g}</svg>`;
   }
 
   function rackSVG(n){
@@ -783,27 +850,32 @@ td.code{font-weight:600;white-space:nowrap}
   $("qPlus").addEventListener("click",()=>{ $("qty").value = Math.min(999,(parseInt($("qty").value,10)||1)+1); });
   $("addCfg").addEventListener("click",()=>{ addToCart(tableCode(cfg.b,cfg.n,cfg.B,cfg.O), $("qty").value); $("qty").value=1; });
 
-  // Product cards
+  // Product blocks (same layout as the work table builder)
   function setupCard(rootId, lengths, codeFor, draw, labelFor, extraFor, defIdx, photoFor){
     const root = $(rootId); let n = lengths[defIdx!=null ? defIdx : (lengths.length>2?1:0)];
+    const q = s => root.querySelector(s);
     labelFor = labelFor || (k=>`${k} mm`);
-    const segEl = root.querySelector("[data-sizes]");
+    const segEl = q("[data-sizes]");
     segEl.innerHTML = lengths.map(k=>`<label><input type="radio" name="${rootId}-len" value="${k}" ${k===n?"checked":""}><span>${labelFor(k)}</span></label>`).join("");
-    segEl.setAttribute("role","radiogroup"); segEl.setAttribute("aria-label","Length");
+    const qty = q("[data-qty]");
+    const qv = () => Math.max(1, Math.min(999, parseInt(qty.value,10)||1));
     function render(){
-      const code = codeFor(n), item = CATALOG[code];
-      const ph = photoFor(n);
-      root.querySelector("[data-pic]").innerHTML = `<figure class="photo"><img src="img/${ph[0]}.jpg" alt="${ph[1]}" loading="lazy" decoding="async"></figure>` + draw(n);
-      root.querySelector("[data-code]").textContent = `${code}, ${item.size} mm`;
-      root.querySelector("[data-price]").textContent = fmt(item.price);
-      root.querySelector("[data-add]").textContent = `Add ${code} to cart`;
-      const ex = root.querySelector("[data-extra]"); if(ex && extraFor) ex.textContent = extraFor(n);
+      const code = codeFor(n), item = CATALOG[code], ph = photoFor(n);
+      q("[data-code]").textContent = code;
+      q("[data-size]").textContent = `${item.size} mm`;
+      const img = q("[data-photo]"); img.src = `img/${ph[0]}.jpg`; img.alt = ph[1];
+      q("[data-draw]").innerHTML = draw(n);
+      q("[data-price]").textContent = fmt(item.price);
+      q("[data-incl]").textContent = `excl. GST, ${fmt(item.price*(1+GST))} with 18% GST`;
+      q("[data-add]").textContent = `Add ${code} to cart`;
+      const ex = q("[data-extra]"); if(ex && extraFor) ex.textContent = extraFor(n);
     }
     segEl.addEventListener("change",e=>{ n = +e.target.value; render(); });
-    root.querySelector("[data-add]").addEventListener("click",()=>addToCart(codeFor(n),1));
+    q("[data-qminus]").addEventListener("click",()=>{ qty.value = Math.max(1, qv()-1); });
+    q("[data-qplus]").addEventListener("click",()=>{ qty.value = Math.min(999, qv()+1); });
+    q("[data-add]").addEventListener("click",()=>{ addToCart(codeFor(n), qv()); qty.value = 1; });
     render();
   }
-  setupCard("pOHS",[900,1150,1500],L=>`${LEN2N[L]}OHS2`,L=>ohsSVG(LEN2N[L]),null,null,null,()=>["ohs","3D view of the 2 overhead shelves"]);
   setupCard("pRack",[900,1150],L=>RACKS[LEN2N[L]].code,L=>rackSVG(LEN2N[L]),null,null,null,()=>["rack-ss","3D view of the 5-tier stainless steel storage rack"]);
   setupCard("pMS",[900,1200],L=>MS_RACKS[L].code,msRackSVG,null,null,null,()=>["rack-ms","3D view of the 5-tier MS storage rack"]);
   setupCard("pGT",[0,1,2],i=>GTRAPS[i].code,i=>gtrapSVG(GTRAPS[i]),i=>`${GTRAPS[i].vol} L`,i=>`Holds ${GTRAPS[i].vol} litres, handles ${GTRAPS[i].flow} litres per hour`,0,()=>["gtrap","3D view of the stainless steel grease trap"]);

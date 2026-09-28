@@ -12,7 +12,7 @@ Static website for USP Essentials stainless steel work tables, shelves, racks, g
 No build step. Edit `index.html`, commit and push, and Cloudflare redeploys automatically.
 
 Prices and product data are in the `<script>` block of `index.html`
-(`TABLE_PRICES`, `OHS_PRICES`, `RACKS`, `MS_RACKS`, `GTRAPS`, `GRATINGS`).
+(`TABLE_PRICES`, `RACKS`, `MS_RACKS`, `GTRAPS`, `GRATINGS`).
 The WhatsApp number and email are `WA_NUMBER` and `EMAIL` in the same block.
 
 ## Deploy (Cloudflare)
