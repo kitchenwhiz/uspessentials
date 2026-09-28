@@ -1,15 +1,20 @@
 // Cloudflare Pages Function: POST /api/send-order
 //
-// Emails an order (details in the body, order PDF attached) to USP Essentials,
-// and optionally a copy to the customer. Sends through Resend (resend.com).
+// For each order it:
+//   1. saves the order PDF to a Google Drive folder (through a Google Apps Script web app),
+//   2. emails the order (details in the body, PDF attached, Drive link) to USP Essentials,
+//   3. optionally emails a copy to the customer.
+// and returns the Drive link so the site can put it in the WhatsApp message.
 //
 // Settings (Cloudflare → Pages project → Settings → Variables and secrets):
-//   RESEND_API_KEY  (secret)  API key from resend.com
-//   MAIL_FROM                 e.g.  USP Essentials <orders@yourdomain.in>   (domain verified in Resend)
-//   ORDER_TO        optional  where orders go; defaults to uspecoline@gmail.com
+//   RESEND_API_KEY    (secret)  API key from resend.com
+//   MAIL_FROM                   e.g.  USP Essentials <orders@yourdomain.in>   (domain verified in Resend)
+//   ORDER_TO          optional  where orders go; defaults to uspecoline@gmail.com
+//   DRIVE_SCRIPT_URL            Web app URL of the Apps Script in drive/save-order-pdf.gs
+//   DRIVE_TOKEN       (secret)  The same secret written in that script
 //
-// Until RESEND_API_KEY and MAIL_FROM are set, this returns 503 and the site falls
-// back to opening the customer's email app with the order filled in.
+// Email and Drive are independent: either can be set up first. If neither is set up
+// this returns 503 and the site falls back to the customer attaching the PDF themselves.
 
 const DEFAULT_TO = "uspecoline@gmail.com"; // override with the ORDER_TO setting
 const GST_RATE = 0.18;
@@ -29,7 +34,9 @@ export async function onRequestPost({ request, env }) {
   const origin = request.headers.get("Origin");
   if (origin && new URL(origin).host !== new URL(request.url).host) return json({ ok: false, error: "forbidden" }, 403);
 
-  if (!env.RESEND_API_KEY || !env.MAIL_FROM) return json({ ok: false, error: "not_configured" }, 503);
+  const emailOn = !!(env.RESEND_API_KEY && env.MAIL_FROM);
+  const driveOn = !!(env.DRIVE_SCRIPT_URL && env.DRIVE_TOKEN);
+  if (!emailOn && !driveOn) return json({ ok: false, error: "not_configured" }, 503);
 
   let d;
   try { d = await request.json(); } catch { return json({ ok: false, error: "bad_request" }, 400); }
@@ -70,6 +77,24 @@ export async function onRequestPost({ request, env }) {
   try { if (!atob(pdfB64.slice(0, 8)).startsWith("%PDF")) return json({ ok: false, error: "bad_pdf" }, 400); }
   catch { return json({ ok: false, error: "bad_pdf" }, 400); }
 
+  // ---- 1. save the PDF to Google Drive ----
+  let driveUrl = "";
+  if (driveOn) {
+    const safe = (s) => s.replace(/[\\/:*?"<>|#%]+/g, " ").replace(/\s{2,}/g, " ").trim().slice(0, 60);
+    const driveName = `${ref} - ${safe(cust.name)} - ${safe(cust.project)}.pdf`;
+    try {
+      const r = await fetch(env.DRIVE_SCRIPT_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" }, redirect: "follow",
+        body: JSON.stringify({
+          token: env.DRIVE_TOKEN, name: driveName, base64: pdfB64,
+          description: `Order ${ref} | ${inr(total)} | Qty ${units} | ${cust.name} | ${cust.project} | ${cust.phone}`,
+        }),
+      });
+      const j = await r.json();
+      if (j && j.ok && /^https:\/\/(drive|docs)\.google\.com\//.test(j.url || "")) driveUrl = j.url;
+    } catch { /* Drive unavailable: carry on with email */ }
+  }
+
   // ---- compose ----
   // Subject: order number, total, quantity, name, project
   const subject = `Order ${ref} | ${inr(total)} | Qty ${units} | ${cust.name} | ${cust.project}`;
@@ -78,7 +103,7 @@ export async function onRequestPost({ request, env }) {
     ["Phone", cust.phone], ["Email", cust.email], ["Delivery city", cust.city], ["GSTIN", cust.gst],
   ].filter(([, v]) => v);
 
-  const html = (intro) => `<!doctype html><html><body style="margin:0;background:#EEF1F3;font-family:Arial,Helvetica,sans-serif;color:#14171A">
+  const html = (intro, forOwner) => `<!doctype html><html><body style="margin:0;background:#EEF1F3;font-family:Arial,Helvetica,sans-serif;color:#14171A">
 <div style="max-width:640px;margin:0 auto;background:#fff">
   <div style="background:#000;padding:18px 24px"><div style="color:#F2C063;font-size:22px;font-weight:bold">USP Essentials</div>
   <div style="color:#C9CED2;font-size:13px">Order ${esc(ref)}</div></div>
@@ -94,12 +119,13 @@ export async function onRequestPost({ request, env }) {
       <tr><td colspan="4" align="right" style="padding:6px 8px;font-size:16px"><b>Total</b></td><td align="right" style="padding:6px 8px;font-size:16px;white-space:nowrap"><b>${inr(total)}</b></td></tr>
     </table>
     ${cust.note ? `<p style="margin:16px 0 0;font-size:14px"><b>Notes:</b> ${esc(cust.note)}</p>` : ""}
+    ${forOwner && driveUrl ? `<p style="margin:16px 0 0;font-size:14px"><b>PDF in Google Drive:</b> <a href="${esc(driveUrl)}">${esc(driveUrl)}</a></p>` : ""}
     <p style="margin:16px 0 0;font-size:13px;color:#58626A">The order PDF is attached. Prices exclude shipping, unloading and installation. We confirm stock within 24 working hours and share payment details; processing starts after 100% advance payment.</p>
   </div>
   <div style="padding:14px 24px;background:#000;color:#8C949A;font-size:12px">USP Essentials, 235/E Bommasandra Industrial Area, Phase 3, Bengaluru 560099 · +91 99020 14700 · uspecoline@gmail.com</div>
 </div></body></html>`;
 
-  const text = (intro) => [
+  const text = (intro, forOwner) => [
     intro, "",
     ...detailRows.map(([k, v]) => `${k}: ${v}`), "",
     "Items:",
@@ -107,6 +133,7 @@ export async function onRequestPost({ request, env }) {
     `Subtotal (excl. GST): ${inr(sub)}`, `GST 18%: ${inr(gst)}`, `Total: ${inr(total)}`,
     cust.note ? `\nNotes: ${cust.note}` : "",
     "", "The order PDF is attached.",
+    forOwner && driveUrl ? `PDF in Google Drive: ${driveUrl}` : "",
   ].join("\n");
 
   const attachments = [{ filename: pdfName, content: pdfB64 }];
@@ -119,19 +146,23 @@ export async function onRequestPost({ request, env }) {
       body: JSON.stringify(payload),
     });
 
-  // 1) to USP Essentials (reply goes to the customer if they gave an email)
-  const ownerRes = await sendMail({
-    from: env.MAIL_FROM, to: [ownerTo], subject,
-    ...(cust.email ? { reply_to: cust.email } : {}),
-    html: html(`New order from <b>${esc(cust.name)}</b> for <b>${esc(cust.project)}</b>.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`),
-    text: text(`New order from ${cust.name} for ${cust.project}.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`),
-    attachments,
-  });
-  if (!ownerRes.ok) return json({ ok: false, error: "send_failed" }, 502);
+  // ---- 2. email USP Essentials (reply goes to the customer if they gave an email) ----
+  let emailed = false;
+  if (emailOn) {
+    const ownerRes = await sendMail({
+      from: env.MAIL_FROM, to: [ownerTo], subject,
+      ...(cust.email ? { reply_to: cust.email } : {}),
+      html: html(`New order from <b>${esc(cust.name)}</b> for <b>${esc(cust.project)}</b>.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`, true),
+      text: text(`New order from ${cust.name} for ${cust.project}.${viaWhatsApp ? " The customer is also sending a summary on WhatsApp." : ""}`, true),
+      attachments,
+    });
+    emailed = ownerRes.ok;
+  }
+  if (!emailed && !driveUrl) return json({ ok: false, error: "send_failed" }, 502);
 
-  // 2) optional copy to the customer (reply goes to USP Essentials)
+  // ---- 3. optional copy to the customer (reply goes to USP Essentials) ----
   let copied = false;
-  if (wantCopy) {
+  if (wantCopy && emailOn) {
     const copyRes = await sendMail({
       from: env.MAIL_FROM, to: [cust.email], subject, reply_to: ownerTo,
       html: html(`Thank you, ${esc(cust.name)}. This is a copy of the order you sent to USP Essentials.`),
@@ -141,5 +172,5 @@ export async function onRequestPost({ request, env }) {
     copied = copyRes.ok;
   }
 
-  return json({ ok: true, ref, total, copied });
+  return json({ ok: true, ref, total, emailed, driveUrl, copied });
 }

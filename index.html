@@ -1194,13 +1194,14 @@ body.has-cart{padding-bottom:84px}
   let mailState = null;
   function mailStatusHtml(){
     const m = mailState;
-    if (m.status === "sent") return `<div class="mail-ok" id="mailStatus" role="status"><strong>Order ${esc(m.ref)} sent</strong><p>${m.via==="whatsapp" ? `The full order (${esc(m.total)}) and PDF have been emailed to USP Essentials, and WhatsApp is opening with a summary. Press send in WhatsApp to finish.` : `Your order (${esc(m.total)}) has been emailed to USP Essentials with the PDF attached.`}${m.copyTo ? ` A copy is on its way to ${esc(m.copyTo)}.` : ""} We will confirm stock within 24 working hours.</p></div>`;
+    if (m.status === "sent") return `<div class="mail-ok" id="mailStatus" role="status"><strong>Order ${esc(m.ref)} sent</strong><p>${m.via==="whatsapp" ? `${m.emailed ? `The full order (${esc(m.total)}) and PDF have been emailed to USP Essentials` : `The order PDF (${esc(m.total)}) has been saved for USP Essentials`}${m.drive && m.emailed ? " and saved to their Google Drive" : ""}, and WhatsApp is opening with a summary${m.drive ? " and the PDF link" : ""}. Press send in WhatsApp to finish.` : `Your order (${esc(m.total)}) has been emailed to USP Essentials with the PDF attached.`}${m.copyTo ? ` A copy is on its way to ${esc(m.copyTo)}.` : ""} We will confirm stock within 24 working hours.</p></div>`;
     return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>We couldn't send the email from the site just now, so your email app has opened with the order filled in. Attach <code>${esc(m.pdfName)}</code> (saved to your Downloads) and press send.</p><div class="row"><button type="button" class="btn btn-line btn-sm" id="mailPdfAgain">Save PDF again</button><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
   }
   const blobToBase64 = blob => new Promise((ok, fail)=>{ const r = new FileReader(); r.onload = ()=> ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob); });
   function mailSubject(c, ref){ const t = totals(); return `Order ${ref} | ${fmt(t.total)} | Qty ${t.units} | ${c.name} | ${c.project}`; }
   // Short WhatsApp summary: order number, amount, customer details, SKU | Qty | Amount, totals
-  function waSummary(c, ref, emailed){
+  function waSummary(c, ref, sent){
+    const emailed = !!(sent && sent.emailed), driveUrl = sent && sent.driveUrl;
     const t = totals();
     return [
       `*New order ${ref}*`, `Amount: ${fmt(t.total)} (incl. GST)`, "",
@@ -1209,7 +1210,8 @@ body.has-cart{padding-bottom:84px}
       ...Object.entries(cart).map(([code,q])=>`${code} | ${q} | ${fmt(CATALOG[code].price*q)}`),
       `Subtotal: ${fmt(t.sub)}`, `GST 18%: ${fmt(t.gst)}`, `*Total: ${fmt(t.total)}*`,
       c.note?`\nNotes: ${c.note}`:null,
-      "", emailed ? "Full order details and PDF sent by email." : "Full order PDF to follow."
+      "", driveUrl ? `Order PDF: ${driveUrl}` : null,
+      emailed ? "Full order details and PDF sent by email." : (driveUrl ? null : "Full order PDF to follow.")
     ].filter(x=>x!==null).join("\n");
   }
   // Email the full order + PDF through /api/send-order. Returns the server reply; throws on failure.
@@ -1233,6 +1235,7 @@ body.has-cart{padding-bottom:84px}
       blob = buildPdf(JsPDF, c, ref);
       const t = totals();
       const out = await postOrder(c, ref, blob, pdfName, "email");
+      if (!out.emailed) throw new Error("email_not_sent");
       mailState = {status:"sent", ref, total: fmt(t.total), copyTo: out.copied ? c.email : ""};
       renderCart();
     } catch (err) {
@@ -1252,15 +1255,16 @@ body.has-cart{padding-bottom:84px}
   async function sendWhatsApp(c, ref){
     const pdfName = `Order-${ref}.pdf`;
     const btn = $("sendWa"); btn.disabled = true; btn.textContent = "Sending order…";
-    let blob = null, emailed = false, out = {};
+    let blob = null, delivered = false, out = {};
     try {
       blob = buildPdf(await loadJsPdf(), c, ref);
-      out = await postOrder(c, ref, blob, pdfName, "whatsapp");   // full order + PDF by email
-      emailed = true;
-    } catch (err) { /* email not available: fall back below */ }
-    const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waSummary(c, ref, emailed))}`;
-    if (emailed) {
-      mailState = {status:"sent", via:"whatsapp", ref, total: fmt(totals().total), copyTo: out.copied ? c.email : ""};
+      out = await postOrder(c, ref, blob, pdfName, "whatsapp");   // PDF to Drive + full order by email
+      delivered = !!(out.emailed || out.driveUrl);
+    } catch (err) { /* not available: fall back below */ }
+    const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waSummary(c, ref, delivered ? out : null))}`;
+    const emailed = delivered;
+    if (delivered) {
+      mailState = {status:"sent", via:"whatsapp", ref, total: fmt(totals().total), copyTo: out.copied ? c.email : "", emailed: !!out.emailed, drive: !!out.driveUrl};
       lastPdf = null;
       renderCart();
     } else if (blob) {
