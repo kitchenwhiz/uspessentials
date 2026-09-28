@@ -42,16 +42,27 @@ function setupCheck() {
   Logger.log('Orders folder ready: ' + f.getUrl());
 }
 
+/**
+ * Run this from the editor (select "testUpload" → Run) to save a small test PDF the
+ * same way the website does. The Execution log shows the result; delete the
+ * "TEST - delete me.pdf" file from the folder afterwards.
+ */
+function testUpload() {
+  const b64 = Utilities.base64Encode(Utilities.newBlob('%PDF-1.4\n% test file from testUpload\n%%EOF\n').getBytes());
+  const res = doPost({ postData: { contents: JSON.stringify({ token: TOKEN, name: 'TEST - delete me.pdf', base64: b64, description: 'testUpload' }) } });
+  Logger.log(res.getContent());
+}
+
 function doPost(e) {
   try {
     const d = JSON.parse(e.postData.contents);
     if (!d || d.token !== TOKEN) return reply_({ ok: false, error: 'forbidden' });
 
     const name = String(d.name || 'order.pdf').replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 150);
-    const bytes = Utilities.base64Decode(String(d.base64 || ''));
-    if (bytes.length < 5 || bytes.length > 3 * 1024 * 1024) return reply_({ ok: false, error: 'bad_pdf' });
-    const head = String.fromCharCode.apply(null, bytes.slice(0, 5).map(function (b) { return b & 0xff; }));
-    if (head !== '%PDF-') return reply_({ ok: false, error: 'bad_pdf' });
+    const b64 = String(d.base64 || '');
+    // A PDF starts with "%PDF-", which is "JVBERi0" in base64
+    if (b64.indexOf('JVBERi0') !== 0 || b64.length > 4 * 1024 * 1024) return reply_({ ok: false, error: 'bad_pdf' });
+    const bytes = Utilities.base64Decode(b64);
 
     const month = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM');
     const folder = childFolder_(rootFolder_(), month);
@@ -60,7 +71,7 @@ function doPost(e) {
 
     return reply_({ ok: true, id: file.getId(), url: file.getUrl() });
   } catch (err) {
-    return reply_({ ok: false, error: 'server_error' });
+    return reply_({ ok: false, error: 'server_error', detail: String((err && err.message) || err).slice(0, 150) });
   }
 }
 

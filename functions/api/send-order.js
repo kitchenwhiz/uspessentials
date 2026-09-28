@@ -93,7 +93,7 @@ export async function onRequestPost({ request, env }) {
       const raw = await r.text();
       let j = null; try { j = JSON.parse(raw); } catch { driveError = `not_json_${r.status}`; }
       if (j && j.ok && /^https:\/\/(drive|docs)\.google\.com\//.test(j.url || "")) driveUrl = j.url;
-      else if (j) driveError = String(j.error || "unknown").slice(0, 40);
+      else if (j) driveError = (String(j.error || "unknown") + (j.detail ? ": " + j.detail : "")).slice(0, 160);
     } catch (e) { driveError = "unreachable"; }
   }
 
