@@ -234,6 +234,9 @@ td.code{font-weight:600;white-space:nowrap}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);z-index:41;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .drawer.open{transform:none}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--rule)}
+.drawer-actions{display:flex;align-items:center;gap:8px}
+#clearCart[hidden]{display:none}
+#clearCart.confirm{border-color:var(--danger);color:var(--danger)}
 .drawer-head h2{margin:0;font-size:22px;font-weight:500}
 .icon-btn{background:none;border:0;width:40px;height:40px;cursor:pointer;border-radius:4px;font-size:24px;line-height:1}
 .icon-btn:hover{background:var(--steel)}
@@ -729,7 +732,10 @@ body.has-cart{padding-bottom:84px}
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
   <div class="drawer-head">
     <h2 id="cartTitle">Your order</h2>
-    <button class="icon-btn" id="closeCart" aria-label="Close cart">×</button>
+    <div class="drawer-actions">
+      <button type="button" class="btn btn-line btn-sm" id="clearCart" hidden>Clear cart</button>
+      <button class="icon-btn" id="closeCart" aria-label="Close cart">×</button>
+    </div>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
 </aside>
@@ -795,14 +801,12 @@ body.has-cart{padding-bottom:84px}
 
   // Cart state
   let cbDefault = "", addedTimer = null;
+  // The cart starts empty on every page load
   let cart = {};
-  try { const raw = localStorage.getItem("usp-essentials-cart"); if(raw){ const p = JSON.parse(raw); if(p && typeof p==="object") cart = p; } } catch(e){}
-  Object.keys(cart).forEach(k=>{ if(!CATALOG[k] || !(cart[k]>0)) delete cart[k]; });
+  try { localStorage.removeItem("usp-essentials-cart"); } catch(e){}
   let customer = {};
   try { const raw = localStorage.getItem("usp-essentials-customer"); if(raw) customer = JSON.parse(raw)||{}; } catch(e){}
-  function save(){
-    try { localStorage.setItem("usp-essentials-cart", JSON.stringify(cart)); } catch(e){}
-  }
+  function save(){ /* cart is kept for this visit only */ }
   function saveCustomer(){
     try { localStorage.setItem("usp-essentials-customer", JSON.stringify(customer)); } catch(e){}
   }
@@ -1033,6 +1037,7 @@ body.has-cart{padding-bottom:84px}
     $("cartBarBtn").setAttribute("aria-label", `View cart: ${t.units} ${t.units===1?"item":"items"}, ${fmt(t.total)} including GST`);
     const body = $("drawerBody");
     const codes = Object.keys(cart);
+    $("clearCart").hidden = !codes.length;
     if(!codes.length){
       body.innerHTML = `<div class="empty"><p>Your cart is empty.</p><p>Configure a work table or add items from the price list.</p><button class="btn btn-gold" id="goBuild">Configure a work table</button></div>`;
       $("goBuild").addEventListener("click",()=>{ closeCart(); location.hash="#build"; });
@@ -1325,6 +1330,31 @@ body.has-cart{padding-bottom:84px}
   const setHeadH = ()=> document.documentElement.style.setProperty("--head-h", head.offsetHeight + "px");
   if (window.ResizeObserver) new ResizeObserver(setHeadH).observe(head);
   setHeadH(); onScroll();
+
+  // Clear cart: tap once to arm, tap again within 3 s to confirm
+  let clearTimer = null;
+  $("clearCart").addEventListener("click", ()=>{
+    const b = $("clearCart");
+    if (!b.classList.contains("confirm")) {
+      b.classList.add("confirm"); b.textContent = "Tap again to clear";
+      clearTimer = setTimeout(()=>{ b.classList.remove("confirm"); b.textContent = "Clear cart"; }, 3000);
+      return;
+    }
+    clearTimeout(clearTimer); b.classList.remove("confirm"); b.textContent = "Clear cart";
+    cart = {}; mailState = null; lastPdf = null; save(); renderCart();
+  });
+
+  // 3) Every visit starts from the basic choices, even if the browser restores old form state
+  function resetChoices(){
+    document.querySelector('input[name="base"][value="U1"]').checked = true;
+    document.querySelector('input[name="len"][value="4"]').checked = true;
+    $("optB").checked = false; if ($("optO")) $("optO").checked = false;
+    $("qty").value = 1;
+    document.querySelectorAll("[data-qty]").forEach(i=>{ i.value = 1; });
+    const s = $("plSearch"); if (s) s.value = "";
+  }
+  resetChoices();
+  window.addEventListener("pageshow", e=>{ if (e.persisted) location.reload(); });   // back/forward cache: start fresh too
 
   renderConfig(); renderPriceList(); renderCart();
 })();
