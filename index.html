@@ -1064,6 +1064,8 @@ body.has-cart{padding-bottom:84px}
         <h3>Your details</h3>
         <div class="field"><label for="fPhone">Phone number</label><input id="fPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. 98450 12345" value="${esc(customer.phone)}"></div>
         <p class="field-hint">Needed to send by email. On WhatsApp we see your number, so you can send right away.</p>
+        <div class="field"><label for="fEmail">Email (optional)</label><input id="fEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(customer.email)}"></div>
+        <p class="field-hint">Add your email to get a copy of the order with the PDF.</p>
         <p class="err" id="fErr" role="alert"></p>
         <div class="send">
           <button class="btn btn-gold" id="sendWa">Send order on WhatsApp</button>
@@ -1076,10 +1078,10 @@ body.has-cart{padding-bottom:84px}
           <div class="row"><button type="button" class="btn btn-line btn-sm" id="pdfAgain">Save PDF again</button><button type="button" class="btn btn-line btn-sm" id="waAgain">Open WhatsApp again</button></div>
         </div>` : ""}
       </div>`;
-    $("fPhone").addEventListener("input",()=>{ customer = readForm(); saveCustomer(); });
+    ["fPhone","fEmail"].forEach(id=>$(id).addEventListener("input",()=>{ customer = readForm(); saveCustomer(); }));
     $("sendWa").addEventListener("click",()=>send("wa"));
     $("sendMail").addEventListener("click",()=>send("mail"));
-    if(mailState && mailState.status==="fallback" && mailState.blob) $("mailPdfAgain").addEventListener("click",()=>downloadBlob(mailState.blob, mailState.pdfName));
+    if(mailState && mailState.status==="fallback" && mailState.blob && !mailState.driveUrl) $("mailPdfAgain").addEventListener("click",()=>downloadBlob(mailState.blob, mailState.pdfName));
     if(lastPdf){
       $("pdfAgain").addEventListener("click",()=>downloadBlob(lastPdf.blob, lastPdf.name));
       $("waAgain").addEventListener("click",()=>{ location.href = lastPdf.wa; });
@@ -1099,18 +1101,18 @@ body.has-cart{padding-bottom:84px}
   });
 
   // Only the phone number is collected; the other fields stay empty
-  function readForm(){ return {name:"", biz:"", project:"", phone:$("fPhone").value.trim(), city:"", gst:"", note:"", copy:false, email:""}; }
-  function orderText(c, ref, pdfName){
+  function readForm(){ const email = $("fEmail").value.trim(); return {name:"", biz:"", project:"", phone:$("fPhone").value.trim(), city:"", gst:"", note:"", copy: !!email, email}; }
+  function orderText(c, ref, pdfName, pdfUrl){
     const t = totals();
     const lines = Object.entries(cart).map(([code,q])=>`${code} (${CATALOG[code].name}, ${CATALOG[code].size} mm) x ${q} = ${fmt(CATALOG[code].price*q)}`);
     return [
       "New order: USP Essentials", ref?`Order ref: ${ref}`:null, "",
-      c.phone?`Phone: ${c.phone}`:null, "",
+      c.phone?`Phone: ${c.phone}`:null, c.email?`Email: ${c.email}`:null, "",
       "Items:", ...lines, "",
       `Subtotal (excl. GST): ${fmt(t.sub)}`, `GST 18%: ${fmt(t.gst)}`, `Total: ${fmt(t.total)}`,
       "Shipping to be arranged and paid by buyer.",
       c.note?`\nNotes: ${c.note}`:null,
-      pdfName?`\nOrder PDF: ${pdfName} (attached)`:null
+      pdfUrl?`\nOrder PDF: ${pdfUrl}`:(pdfName?`\nOrder PDF: ${pdfName} (attached)`:null)
     ].filter(x=>x!==null).join("\n");
   }
 
@@ -1243,6 +1245,7 @@ body.has-cart{padding-bottom:84px}
   function mailStatusHtml(){
     const m = mailState;
     if (m.status === "sent") return `<div class="mail-ok" id="mailStatus" role="status"><strong>Order ${esc(m.ref)} sent</strong><p>${m.via==="whatsapp" ? `${m.emailed ? `The full order (${esc(m.total)}) and PDF have been emailed to USP Essentials` : `The order PDF (${esc(m.total)}) has been saved for USP Essentials`}${m.drive && m.emailed ? " and saved to their Google Drive" : ""}, and WhatsApp is opening with a summary${m.drive ? " and the PDF link" : ""}. Press send in WhatsApp to finish.` : `Your order (${esc(m.total)}) has been emailed to USP Essentials with the PDF attached.`}${m.copyTo ? ` A copy is on its way to ${esc(m.copyTo)}.` : ""} We will confirm stock within 24 working hours.</p></div>`;
+    if (m.driveUrl) return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>Your order PDF is saved and linked in the email. Your email app has opened with the order filled in${m.mailto.includes("cc=") ? " (with you in CC)" : ""}. Press send to finish.</p><div class="row"><a class="btn btn-line btn-sm" href="${esc(m.driveUrl)}" target="_blank" rel="noopener">Open order PDF</a><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
     return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>We couldn't send the email from the site just now, so your email app has opened with the order filled in. Attach <code>${esc(m.pdfName)}</code> (saved to your Downloads) and press send.</p><div class="row"><button type="button" class="btn btn-line btn-sm" id="mailPdfAgain">Save PDF again</button><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
   }
   const blobToBase64 = blob => new Promise((ok, fail)=>{ const r = new FileReader(); r.onload = ()=> ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob); });
@@ -1253,7 +1256,7 @@ body.has-cart{padding-bottom:84px}
     const t = totals();
     return [
       `*New order ${ref}*`, `Amount: ${fmt(t.total)} (incl. GST)`, "",
-      c.phone?`Phone: ${c.phone}`:null, c.phone?"":null,
+      c.phone?`Phone: ${c.phone}`:null, c.email?`Email: ${c.email}`:null, (c.phone||c.email)?"":null,
       "SKU | Qty | Amount",
       ...Object.entries(cart).map(([code,q])=>`${code} | ${q} | ${fmt(CATALOG[code].price*q)}`),
       `Subtotal: ${fmt(t.sub)}`, `GST 18%: ${fmt(t.gst)}`, `*Total: ${fmt(t.total)}*`,
@@ -1277,12 +1280,13 @@ body.has-cart{padding-bottom:84px}
   }
   async function sendEmail(c, ref){
     const btn = $("sendMail"); btn.disabled = true; btn.textContent = "Sending order…";
-    const pdfName = `Order-${ref}.pdf`; let blob = null;
+    const pdfName = `Order-${ref}.pdf`; let blob = null, driveUrl = "";
     try {
       const JsPDF = await loadJsPdf();
       blob = buildPdf(JsPDF, c, ref);
       const t = totals();
-      const out = await postOrder(c, ref, blob, pdfName, "email");
+      const out = await postOrder(c, ref, blob, pdfName, "email");   // saves to Drive + emails
+      driveUrl = out.driveUrl || "";
       if (!out.emailed) throw new Error("email_not_sent");
       mailState = {status:"sent", ref, total: fmt(t.total), copyTo: out.copied ? c.email : ""};
       renderCart();
@@ -1290,10 +1294,10 @@ body.has-cart{padding-bottom:84px}
       // Fallback: save the PDF and open the customer's email app, filled in
       const q = new URLSearchParams();
       if (c.copy && c.email) q.set("cc", c.email);
-      q.set("subject", mailSubject(c, ref)); q.set("body", orderText(c, ref, blob ? pdfName : null));
+      q.set("subject", mailSubject(c, ref)); q.set("body", orderText(c, ref, blob ? pdfName : null, driveUrl));
       const mailto = `mailto:${EMAIL}?` + q.toString().replace(/\+/g, "%20");
-      if (blob) downloadBlob(blob, pdfName);
-      mailState = {status:"fallback", ref, pdfName, mailto, blob};
+      if (blob && !driveUrl) downloadBlob(blob, pdfName);   // with a Drive link there is nothing to attach
+      mailState = {status:"fallback", ref, pdfName, mailto, blob, driveUrl};
       renderCart();
       location.href = mailto;
     }
@@ -1333,6 +1337,9 @@ body.has-cart{padding-bottom:84px}
     const phoneOk = c.phone.replace(/\D/g,"").length>=10;
     $("fPhone").setAttribute("aria-invalid", String(via!=="wa" && !phoneOk));
     if(via!=="wa" && !phoneOk){ $("fErr").textContent = "Add your 10-digit phone number to send the order by email."; $("fPhone").focus(); return; }
+    const emailOk = !c.email || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email);
+    $("fEmail").setAttribute("aria-invalid", String(!emailOk));
+    if(!emailOk){ $("fErr").textContent = "Check your email address, or leave it empty."; $("fEmail").focus(); return; }
     $("fErr").textContent = "";
     const ref = orderRef();
     if(via==="wa"){ sendWhatsApp(c, ref); }

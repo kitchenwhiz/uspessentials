@@ -123,7 +123,7 @@ export async function onRequestPost({ request, env }) {
       <tr><td colspan="4" align="right" style="padding:6px 8px;font-size:16px"><b>Total</b></td><td align="right" style="padding:6px 8px;font-size:16px;white-space:nowrap"><b>${inr(total)}</b></td></tr>
     </table>
     ${cust.note ? `<p style="margin:16px 0 0;font-size:14px"><b>Notes:</b> ${esc(cust.note)}</p>` : ""}
-    ${forOwner && driveUrl ? `<p style="margin:16px 0 0;font-size:14px"><b>PDF in Google Drive:</b> <a href="${esc(driveUrl)}">${esc(driveUrl)}</a></p>` : ""}
+    ${driveUrl ? `<p style="margin:16px 0 0;font-size:14px"><b>PDF in Google Drive:</b> <a href="${esc(driveUrl)}">${esc(driveUrl)}</a></p>` : ""}
     <p style="margin:16px 0 0;font-size:13px;color:#58626A">The order PDF is attached. Prices exclude shipping, unloading and installation. We confirm stock within 24 working hours and share payment details; processing starts after 100% advance payment.</p>
   </div>
   <div style="padding:14px 24px;background:#000;color:#8C949A;font-size:12px">USP Essentials, 235/E Bommasandra Industrial Area, Phase 3, Bengaluru 560099 · +91 99020 14700 · uspessentials@kitchenwhiz.in</div>
@@ -137,7 +137,7 @@ export async function onRequestPost({ request, env }) {
     `Subtotal (excl. GST): ${inr(sub)}`, `GST 18%: ${inr(gst)}`, `Total: ${inr(total)}`,
     cust.note ? `\nNotes: ${cust.note}` : "",
     "", "The order PDF is attached.",
-    forOwner && driveUrl ? `PDF in Google Drive: ${driveUrl}` : "",
+    driveUrl ? `PDF in Google Drive: ${driveUrl}` : "",
   ].join("\n");
 
   const attachments = [{ filename: pdfName, content: pdfB64 }];
