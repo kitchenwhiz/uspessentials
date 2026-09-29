@@ -1149,8 +1149,14 @@ body.has-cart{padding-bottom:84px}
     const L = 15, R = 195, W = R - L; let y = 18;
     // ---- Letterhead, as in rows 1–18 of the USP quote template ----
     doc.setTextColor(160,96,96); doc.setFont("helvetica","normal"); doc.setFontSize(22);
-    doc.text("UNIQUE STEEL PRODUCTS PVT LTD", 105, 18, {align:"center"});
-    const top = 26, rowH = 4.6;
+    doc.text("UNIQUE STEEL PRODUCTS PVT LTD", 105, 18, {align:"center"});   // real text, not an image
+    // Logos either side of the company name: KitchenWhiz on the left, BarWhiz on the right
+    if (pdfLogos) {
+      const lh = 16;   // logo height in mm
+      try { doc.addImage(pdfLogos.kw, "JPEG", L, 6, lh * 89 / 110, lh); } catch(e) {}
+      try { doc.addImage(pdfLogos.bw, "JPEG", R - lh * 96 / 110, 6, lh * 96 / 110, lh); } catch(e) {}
+    }
+    const top = 27, rowH = 4.6;
     // A bordered block; a row with a null label is drawn as a grey heading bar
     const box = (x, w, rows, labelW) => {
       doc.setDrawColor(160,160,160); doc.setLineWidth(0.2); doc.setTextColor(20,23,26);
@@ -1171,7 +1177,7 @@ body.has-cart{padding-bottom:84px}
         ry += rowH;
       });
     };
-    box(L, 76, [
+    box(L, 88, [
       [null, "SERVICE PROVIDER"],
       ["Company Name:", "UNIQUE STEEL PRODUCTS PRIVATE LIMITED"],
       ["Address:", "235/E Bommasandra Industrial Area"],
@@ -1181,13 +1187,9 @@ body.has-cart{padding-bottom:84px}
       ["Email:", "info@kitchenwhiz.in"],
       ["", "GSTIN: 29AAECU1402F1ZO"],
     ], 22);
-    if (pdfLogos) {
-      try { doc.addImage(pdfLogos.kw, "JPEG", 95, top + 4, 24.4 * 0.9, 30 * 0.9); } catch(e) {}
-      try { doc.addImage(pdfLogos.bw, "JPEG", 121, top + 4, 26.1 * 0.9, 30 * 0.9); } catch(e) {}
-    }
     const now = new Date(), MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const dateStr = `${String(now.getDate()).padStart(2,"0")}-${MON[now.getMonth()]}-${String(now.getFullYear()).slice(2)}`;   // e.g. 18-Sep-26
-    box(147, R - 147, [
+    box(111, R - 111, [
       ["DATE:", dateStr, true],
       ["ESTIMATE NO:", ref, true],
       [null, "CONSIGNEE"],
@@ -1196,7 +1198,7 @@ body.has-cart{padding-bottom:84px}
       ["Email:", c.email || ""],
       ["Phone Number:", c.phone || "Sent via WhatsApp", true],
       ["GST #", c.gst || ""],
-    ], 20);
+    ], 24);
     doc.setTextColor(20,23,26); doc.setLineWidth(0.2);
     y = top + 5.5 + 7*rowH + 10;
     const cols = [{h:"#",x:L,w:8},{h:"Code",x:L+8,w:26},{h:"Item",x:L+34,w:78},{h:"Qty",x:L+112,w:14,a:"right"},{h:"Rate",x:L+126,w:27,a:"right"},{h:"Amount",x:L+153,w:27,a:"right"}];
