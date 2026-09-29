@@ -1245,7 +1245,7 @@ body.has-cart{padding-bottom:84px}
   function mailStatusHtml(){
     const m = mailState;
     if (m.status === "sent") return `<div class="mail-ok" id="mailStatus" role="status"><strong>Order ${esc(m.ref)} sent</strong><p>${m.via==="whatsapp" ? `${m.emailed ? `The full order (${esc(m.total)}) and PDF have been emailed to USP Essentials` : `The order PDF (${esc(m.total)}) has been saved for USP Essentials`}${m.drive && m.emailed ? " and saved to their Google Drive" : ""}, and WhatsApp is opening with a summary${m.drive ? " and the PDF link" : ""}. Press send in WhatsApp to finish.` : `Your order (${esc(m.total)}) has been emailed to USP Essentials with the PDF attached.`}${m.copyTo ? ` A copy is on its way to ${esc(m.copyTo)}.` : ""} We will confirm stock within 24 working hours.</p></div>`;
-    if (m.driveUrl) return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>Your order PDF is saved and linked in the email. Your email app has opened with the order filled in${m.mailto.includes("cc=") ? " (with you in CC)" : ""}. Press send to finish.</p><div class="row"><a class="btn btn-line btn-sm" href="${esc(m.driveUrl)}" target="_blank" rel="noopener">Open order PDF</a><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
+    if (m.driveUrl) return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>Your order PDF has been saved to your downloads and linked in the email. Your email app has opened with the order filled in${m.mailto.includes("cc=") ? " (with you in CC)" : ""}. Press send to finish.</p><div class="row"><a class="btn btn-line btn-sm" href="${esc(m.driveUrl)}" target="_blank" rel="noopener">Open order PDF</a><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
     return `<div class="pdf-help" id="mailStatus" role="status"><strong>Finish sending in your email app</strong><p>We couldn't send the email from the site just now, so your email app has opened with the order filled in. Attach <code>${esc(m.pdfName)}</code> (saved to your Downloads) and press send.</p><div class="row"><button type="button" class="btn btn-line btn-sm" id="mailPdfAgain">Save PDF again</button><a class="btn btn-line btn-sm" id="mailAgain" href="${m.mailto}">Open email again</a></div></div>`;
   }
   const blobToBase64 = blob => new Promise((ok, fail)=>{ const r = new FileReader(); r.onload = ()=> ok(String(r.result).split(",")[1]); r.onerror = fail; r.readAsDataURL(blob); });
@@ -1296,7 +1296,7 @@ body.has-cart{padding-bottom:84px}
       if (c.copy && c.email) q.set("cc", c.email);
       q.set("subject", mailSubject(c, ref)); q.set("body", orderText(c, ref, blob ? pdfName : null, driveUrl));
       const mailto = `mailto:${EMAIL}?` + q.toString().replace(/\+/g, "%20");
-      if (blob && !driveUrl) downloadBlob(blob, pdfName);   // with a Drive link there is nothing to attach
+      if (blob) downloadBlob(blob, pdfName);   // the customer keeps a copy of the PDF
       mailState = {status:"fallback", ref, pdfName, mailto, blob, driveUrl};
       renderCart();
       location.href = mailto;

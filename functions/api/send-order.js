@@ -89,6 +89,7 @@ export async function onRequestPost({ request, env }) {
         method: "POST", headers: { "Content-Type": "application/json" }, redirect: "follow",
         body: JSON.stringify({
           token: env.DRIVE_TOKEN, name: driveName, base64: pdfB64,
+          folder: viaWhatsApp ? "" : "email",   // email orders go to the "email" sub-folder for priority handling
           description: `Order ${ref} | ${inr(total)} | Qty ${units}${cust.phone ? ` | ${cust.phone}` : ""}`,
         }),
       });

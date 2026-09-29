@@ -2,8 +2,9 @@
  * USP Essentials – save order PDFs to Google Drive
  *
  * The website's server sends each order PDF here; this script saves it into the
- * "UPS_ecoline_orders" folder of the Google account that runs it, one sub-folder per
- * month (e.g. "2026-09"), and returns the link. (If the folder can't be found it is
+ * "UPS_ecoline_orders" folder of the Google account that runs it, in an "email" sub-folder
+ * for email orders and one sub-folder per month (e.g. "2026-09") for the rest, and
+ * returns the link. (If the folder can't be found it is
  * created in My Drive.)
  *
  * Setup (once, signed in as operations@kitchenwhiz.in):
@@ -64,8 +65,9 @@ function doPost(e) {
     if (b64.indexOf('JVBERi0') !== 0 || b64.length > 4 * 1024 * 1024) return reply_({ ok: false, error: 'bad_pdf' });
     const bytes = Utilities.base64Decode(b64);
 
-    const month = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM');
-    const folder = childFolder_(rootFolder_(), month);
+    // Email orders go to the "email" sub-folder (handled first); others go to a monthly folder
+    const sub = d.folder === 'email' ? 'email' : Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM');
+    const folder = childFolder_(rootFolder_(), sub);
     const file = folder.createFile(Utilities.newBlob(bytes, 'application/pdf', name));
     if (d.description) file.setDescription(String(d.description).slice(0, 500));
     // Quotes are shared with customers: anyone with the link can view this file (the folder stays private)
