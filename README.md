@@ -31,7 +31,7 @@ Variables and secrets (Production and Preview), then redeploy:
 | --- | --- |
 | `RESEND_API_KEY` | API key from Resend (add as a **secret**) |
 | `MAIL_FROM` | Sender, e.g. `USP Essentials <orders@yourdomain.in>`; the domain must be verified in Resend |
-| `ORDER_TO` | Where order emails go, e.g. `uspecoline@kitchenwhiz.in` (defaults to `uspecoline@gmail.com`) |
+| `ORDER_TO` | Optional. Where order emails go; defaults to `uspessentials@kitchenwhiz.in` |
 
 Until these are set, "Send order by email" falls back to saving the PDF and opening the
 customer's email app with the order filled in.

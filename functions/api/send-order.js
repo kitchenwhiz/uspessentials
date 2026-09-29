@@ -9,14 +9,14 @@
 // Settings (Cloudflare → Pages project → Settings → Variables and secrets):
 //   RESEND_API_KEY    (secret)  API key from resend.com
 //   MAIL_FROM                   e.g.  USP Essentials <orders@yourdomain.in>   (domain verified in Resend)
-//   ORDER_TO          optional  where orders go; defaults to uspecoline@gmail.com
+//   ORDER_TO          optional  where orders go; defaults to uspessentials@kitchenwhiz.in
 //   DRIVE_SCRIPT_URL            Web app URL of the Apps Script in drive/save-order-pdf.gs
 //   DRIVE_TOKEN       (secret)  The same secret written in that script
 //
 // Email and Drive are independent: either can be set up first. If neither is set up
 // this returns 503 and the site falls back to the customer attaching the PDF themselves.
 
-const DEFAULT_TO = "uspecoline@gmail.com"; // override with the ORDER_TO setting
+const DEFAULT_TO = "uspessentials@kitchenwhiz.in"; // override with the ORDER_TO setting
 const GST_RATE = 0.18;
 const MAX_PDF_BASE64 = 2_000_000; // ~1.5 MB PDF
 const MAX_ITEMS = 60;
@@ -126,7 +126,7 @@ export async function onRequestPost({ request, env }) {
     ${forOwner && driveUrl ? `<p style="margin:16px 0 0;font-size:14px"><b>PDF in Google Drive:</b> <a href="${esc(driveUrl)}">${esc(driveUrl)}</a></p>` : ""}
     <p style="margin:16px 0 0;font-size:13px;color:#58626A">The order PDF is attached. Prices exclude shipping, unloading and installation. We confirm stock within 24 working hours and share payment details; processing starts after 100% advance payment.</p>
   </div>
-  <div style="padding:14px 24px;background:#000;color:#8C949A;font-size:12px">USP Essentials, 235/E Bommasandra Industrial Area, Phase 3, Bengaluru 560099 · +91 99020 14700 · uspecoline@gmail.com</div>
+  <div style="padding:14px 24px;background:#000;color:#8C949A;font-size:12px">USP Essentials, 235/E Bommasandra Industrial Area, Phase 3, Bengaluru 560099 · +91 99020 14700 · uspessentials@kitchenwhiz.in</div>
 </div></body></html>`;
 
   const text = (intro, forOwner) => [
