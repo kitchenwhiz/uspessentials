@@ -74,7 +74,10 @@ export async function onRequestPost({ request, env }) {
   const units = items.reduce((a, i) => a + i.qty, 0);
 
   const pdfB64 = String(d.pdf?.base64 || "");
-  const pdfName = /^Order-USP-\d{6}-\d{4}(\d{2})?\.pdf$/.test(d.pdf?.name || "") ? d.pdf.name : `Order-${ref}.pdf`;
+  // Orders from test copies of the site (preview etc.) get an "IGNORE-" prefix on their PDF names
+  const live = /^(shopuspessentials\.kitchenwhiz\.in|uspessentials\.pages\.dev)$/i.test(new URL(request.url).hostname);
+  const prefix = live ? "" : "IGNORE-";
+  const pdfName = `${prefix}Order-${ref}.pdf`;
   if (!pdfB64 || pdfB64.length > MAX_PDF_BASE64 || !/^[A-Za-z0-9+/]+=*$/.test(pdfB64)) return json({ ok: false, error: "bad_pdf" }, 400);
   try { if (!atob(pdfB64.slice(0, 8)).startsWith("%PDF")) return json({ ok: false, error: "bad_pdf" }, 400); }
   catch { return json({ ok: false, error: "bad_pdf" }, 400); }
@@ -83,7 +86,7 @@ export async function onRequestPost({ request, env }) {
   let driveUrl = "", driveError = "";
   if (driveOn) {
     // File name: order number + phone, e.g. "USP-260928-173300 - 9886672354.pdf"
-    const driveName = `${ref}${phoneDigits ? ` - ${phoneDigits}` : ""}.pdf`;
+    const driveName = `${prefix}${ref}${phoneDigits ? ` - ${phoneDigits}` : ""}.pdf`;
     try {
       const r = await fetch(env.DRIVE_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "application/json" }, redirect: "follow",

@@ -755,6 +755,9 @@ body.has-cart{padding-bottom:84px}
   const GST = 0.18;
   const WA_NUMBER = "919902014700";
   const EMAIL = "uspessentials@kitchenwhiz.in";
+  // Test copies of the site (preview, Claude, local) mark their PDFs "IGNORE-" so they're easy to spot and skip
+  const LIVE_HOSTS = /^(shopuspessentials\.kitchenwhiz\.in|uspessentials\.pages\.dev)$/i;
+  const PDF_PREFIX = LIVE_HOSTS.test(location.hostname) ? "" : "IGNORE-";
   const SIZES = {3:900, 4:1150, 5:1500};
   const TABLE_PRICES = {
     C:  {3:[12000,13500,21000,22000], 4:[14500,16000,31000,32000], 5:[17500,19000,33500,35000]},
@@ -1283,7 +1286,7 @@ body.has-cart{padding-bottom:84px}
   }
   async function sendEmail(c, ref){
     const btn = $("sendMail"); btn.disabled = true; btn.textContent = "Sending order…";
-    const pdfName = `Order-${ref}.pdf`; let blob = null, driveUrl = "";
+    const pdfName = `${PDF_PREFIX}Order-${ref}.pdf`; let blob = null, driveUrl = "";
     try {
       const JsPDF = await loadJsPdf();
       blob = buildPdf(JsPDF, c, ref);
@@ -1308,7 +1311,7 @@ body.has-cart{padding-bottom:84px}
   }
 
   async function sendWhatsApp(c, ref){
-    const pdfName = `Order-${ref}.pdf`;
+    const pdfName = `${PDF_PREFIX}Order-${ref}.pdf`;
     const btn = $("sendWa"); btn.disabled = true; btn.textContent = "Sending order…";
     let blob = null, delivered = false, out = {};
     try {
