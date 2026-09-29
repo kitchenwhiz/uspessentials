@@ -792,6 +792,7 @@ body.has-cart{padding-bottom:84px}
   // Catalogue
   const CATALOG = {}; const ORDER = [];
   function addSku(s){ CATALOG[s.code]=s; ORDER.push(s.code); }
+  const priceOf = code => CATALOG[code].price;
   ["C","U1","U2"].forEach(b=>[3,4,5].forEach(n=>[[0,0],[1,0],[0,1],[1,1]].forEach(([B,O])=>{
     addSku({code:tableCode(b,n,B,O), name:tableName(b,B,O), size:`${SIZES[n]} × 600 × 850`, price:tablePrice(b,n,B,O), group:b});
   })));
@@ -916,7 +917,7 @@ body.has-cart{padding-bottom:84px}
   let lastDrawn = null;
   function renderConfig(){
     const {b,n,B,O} = cfg;
-    const code = tableCode(b,n,B,O), price = tablePrice(b,n,B,O);
+    const code = tableCode(b,n,B,O), price = priceOf(code);
     $("stCode").textContent = code;
     $("stSize").textContent = `${SIZES[n]} × 600 × 850 mm` + (O ? ", shelves to 1625 mm" : "");
     $("stSvg").innerHTML = tableSVG(b,n,B,O,lastDrawn);
@@ -927,8 +928,8 @@ body.has-cart{padding-bottom:84px}
     $("stPrice").textContent = fmt(price);
     $("stAdd").setAttribute("aria-label", `Add ${code} to cart`);
     $("pIncl").textContent = `excl. GST, ${fmt(price*(1+GST))} with 18% GST`;
-    const dB = tablePrice(b,n,true,O) - tablePrice(b,n,false,O);
-    const dO = tablePrice(b,n,B,true) - tablePrice(b,n,B,false);
+    const dB = priceOf(tableCode(b,n,true,O)) - priceOf(tableCode(b,n,false,O));
+    const dO = priceOf(tableCode(b,n,B,true)) - priceOf(tableCode(b,n,B,false));
     $("dB").textContent = B ? "included" : `+ ${fmt(dB)}`;
     $("dO").textContent = O ? "included" : `+ ${fmt(dO)}`;
     const specs = BASE_SPECS[b].slice();
@@ -949,6 +950,7 @@ body.has-cart{padding-bottom:84px}
   $("stAdd").addEventListener("click",addTable);
 
   // Product blocks (same layout as the work table builder)
+  const cardRenders = [];
   function setupCard(rootId, lengths, codeFor, draw, labelFor, extraFor, defIdx, photoFor){
     const root = $(rootId); let n = lengths[defIdx!=null ? defIdx : (lengths.length>2?1:0)];
     const q = s => root.querySelector(s);
@@ -977,6 +979,7 @@ body.has-cart{padding-bottom:84px}
     q("[data-add]").addEventListener("click",add);
     q("[data-sadd]").addEventListener("click",add);
     render();
+    cardRenders.push(render);
   }
   setupCard("pRack",[900,1150],L=>RACKS[LEN2N[L]].code,L=>rackSVG(LEN2N[L]),null,null,null,()=>["rack-ss","3D view of the 5-tier stainless steel storage rack"]);
   setupCard("pMS",[900,1200],L=>MS_RACKS[L].code,msRackSVG,null,null,null,()=>["rack-ms","3D view of the 5-tier MS storage rack"]);
@@ -1402,6 +1405,17 @@ body.has-cart{padding-bottom:84px}
   window.addEventListener("pageshow", e=>{ if (e.persisted) location.reload(); });   // back/forward cache: start fresh too
 
   renderConfig(); renderPriceList(); renderCart();
+
+  // Live prices from the price sheet (Google Sheet via /api/prices). The prices built
+  // into this page are used until it loads, or if it can't be reached.
+  fetch("/api/prices", {cache: "no-store"}).then(r => r.ok ? r.json() : null).then(d => {
+    if (!d || !d.ok || !d.prices) return;
+    let changed = 0;
+    for (const [code, price] of Object.entries(d.prices)) {
+      if (CATALOG[code] && price > 0 && CATALOG[code].price !== price) { CATALOG[code].price = price; changed++; }
+    }
+    if (changed) { renderConfig(); cardRenders.forEach(f => f()); renderPriceList(); renderCart(); }
+  }).catch(() => {});
 })();
 </script>
 </body>

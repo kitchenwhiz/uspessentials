@@ -13,7 +13,7 @@ Static website for USP Essentials stainless steel work tables, shelves, racks, g
 
 No build step. Edit `index.html`, commit and push, and Cloudflare redeploys automatically.
 
-Prices and product data are in the `<script>` block of `index.html`
+Prices are managed in the **price sheet** (see below). The built-in fallback prices and product data are in the `<script>` block of `index.html`
 (`TABLE_PRICES`, `RACKS`, `MS_RACKS`, `GTRAPS`, `GRATINGS`).
 The WhatsApp number and email are `WA_NUMBER` and `EMAIL` in the same block.
 
@@ -49,3 +49,16 @@ in the WhatsApp summary and in the order email to USP Essentials (not in the cus
    `DRIVE_SCRIPT_URL` (the Web app URL) and `DRIVE_TOKEN` (the script's TOKEN, as a secret).
 
 The PDFs stay private to that Google account; requests without the token are refused.
+
+## Price sheet (Google Sheet)
+
+Prices come from a Google Sheet so the team can update them without code changes.
+The site loads `/api/prices` (functions/api/prices.js), which reads the sheet's
+published CSV and overrides the prices built into the page, matched by EQ Code.
+Changes show on the site within about 2 minutes. If the sheet can't be read, the
+built-in prices are used.
+
+Setup: import `USP Essentials price sheet.xlsx` into Google Sheets, then
+File → Share → Publish to web → **Prices** sheet → **Comma-separated values (.csv)** →
+Publish, and add the link in Cloudflare as `PRICE_SHEET_URL` (Production and Preview).
+Only the "Price (Rs, excl. GST)" column is used; new products must be added to the site first.
