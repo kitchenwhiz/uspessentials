@@ -50,7 +50,20 @@ in the WhatsApp summary and in the order email to USP Essentials (not in the cus
 
 The PDFs stay private to that Google account; requests without the token are refused.
 
-## Price sheet (Google Sheet)
+## Prices come from the Quote Builder (since 28 Oct 2026)
+
+One price list for every Kitchen Whiz program: the shop reads the list prices of USP Essentials and USP Ecoline from the
+Quote Builder (uspquote Worker, its approved price list, else its built-in list). Change prices there (Price list page,
+with approval); the shop follows within about a minute.
+
+Setup, once: Cloudflare → Workers & Pages → this Pages project → Settings → **Bindings** → Add → **Service binding**,
+Variable name `PRICES`, Service `uspquote` (Production and Preview), then redeploy. Check: open `/api/prices`;
+it should say `"source":"quote-builder"`.
+
+If the binding is missing or the Quote Builder can't be reached, the shop uses the Google price sheet (if still set up),
+else the prices built into `index.html`.
+
+## Price sheet (Google Sheet, old)
 
 Prices come from a Google Sheet so the team can update them without code changes.
 The site loads `/api/prices` (functions/api/prices.js), which reads the sheet's

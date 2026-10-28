@@ -1,5 +1,10 @@
 // Cloudflare Pages Function: GET /api/prices
 //
+// Since 28 Oct 2026 the prices come from the Kitchen Whiz Quote Builder (one price list for every program):
+// a service binding named PRICES to the "uspquote" Worker (Pages project → Settings → Bindings → Service binding).
+// The quote builder answers GET /api/feed/prices?for=shop with the list prices of USP Essentials and USP Ecoline.
+// The Google price sheet below is only used while the binding is not set up.
+//
 // Reads the USP Essentials price sheet (a Google Sheet published as CSV) and returns
 // { ok, prices: { "<EQ code>": <price excl. GST>, ... }, count }.
 // The site applies these over the prices built into the page, so updating the sheet
@@ -35,7 +40,30 @@ function parseCsv(text) {
   return rows;
 }
 
-export async function onRequestGet({ request, env, waitUntil }) {
+const FEED_CACHE_SECONDS = 60;
+async function fromQuoteBuilder(env) {
+  const r = await env.PRICES.fetch("https://uspquote.internal/api/feed/prices?for=shop");
+  if (!r.ok) return null;
+  const d = await r.json();
+  if (!d || !d.ok || !d.prices) return null;
+  const prices = {};
+  for (const [code, price] of Object.entries(d.prices)) if (price > 0 && price < 10_000_000) prices[code] = Math.round(price);
+  return { ok: true, prices, count: Object.keys(prices).length, source: "quote-builder", at: d.at };
+}
+
+export async function onRequestGet(ctx) {
+  const { env } = ctx;
+  if (env.PRICES) {
+    try {
+      const d = await fromQuoteBuilder(env);
+      if (d) return json(d, 200, FEED_CACHE_SECONDS);
+    } catch {}
+    if (!env.PRICE_SHEET_URL) return json({ ok: false, error: "quote_builder_unreachable" }, 502);
+  }
+  return fromSheet(ctx);
+}
+
+async function fromSheet({ request, env, waitUntil }) {
   if (!env.PRICE_SHEET_URL) return json({ ok: false, error: "not_configured" }, 503);
 
   const cache = caches.default;
@@ -69,7 +97,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     if (/^[A-Z0-9]{2,12}$/.test(code) && price > 0 && price < 10_000_000) prices[code] = Math.round(price);
   }
 
-  const res = json({ ok: true, prices, count: Object.keys(prices).length }, 200, CACHE_SECONDS);
+  const res = json({ ok: true, prices, count: Object.keys(prices).length, source: "sheet" }, 200, CACHE_SECONDS);
   waitUntil(cache.put(cacheKey, res.clone()));
   return res;
 }

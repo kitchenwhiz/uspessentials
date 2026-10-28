@@ -1409,8 +1409,8 @@ body.has-cart{padding-bottom:84px}
 
   renderConfig(); renderPriceList(); renderCart();
 
-  // Live prices from the price sheet (Google Sheet via /api/prices). The prices built
-  // into this page are used until it loads, or if it can't be reached.
+  // Live prices from the Kitchen Whiz Quote Builder's price list (via /api/prices, see functions/api/prices.js).
+  // The prices built into this page are used until it loads, or if it can't be reached.
   fetch("/api/prices", {cache: "no-store"}).then(r => r.ok ? r.json() : null).then(d => {
     if (!d || !d.ok || !d.prices) return;
     let changed = 0;
